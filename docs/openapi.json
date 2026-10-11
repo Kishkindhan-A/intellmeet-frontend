@@ -1,0 +1,5928 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "IntellMeet Backend",
+    "version": "1.0.0",
+    "description": "REST contract index. See docs/API.md for request details, pagination, cookie/CSRF flow, and Socket.IO events."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "im_access"
+      }
+    }
+  },
+  "paths": {
+    "/help": {
+      "get": {
+        "summary": "Public help articles",
+        "operationId": "get__help",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/account/preferences": {
+      "get": {
+        "summary": "Read cookie, locale and time-zone preferences",
+        "operationId": "get__api_account_preferences",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update preferences; does not enable tracking",
+        "operationId": "patch__api_account_preferences",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  },
+                  "locale": {
+                    "type": "string"
+                  },
+                  "analyticsConsent": {
+                    "type": "boolean"
+                  },
+                  "marketingConsent": {
+                    "type": "boolean"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/account/onboarding": {
+      "get": {
+        "summary": "Read onboarding progress",
+        "operationId": "get__api_account_onboarding",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/account/onboarding/complete": {
+      "post": {
+        "summary": "Complete onboarding after workspace membership",
+        "operationId": "post__api_account_onboarding_complete",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/account/support": {
+      "get": {
+        "summary": "List own support requests; workspace scope requires administrator",
+        "operationId": "get__api_account_support",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a workspace support request",
+        "operationId": "post__api_account_support",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "workspaceId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "subject": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": ["workspaceId", "subject", "message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/account/support/{ticketId}": {
+      "patch": {
+        "summary": "Administrator response to a support request",
+        "operationId": "patch__api_account_support__ticketId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["open", "resolved"]
+                  },
+                  "response": {
+                    "type": "string"
+                  }
+                },
+                "required": ["status", "response"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register and email verification link",
+        "operationId": "post__api_auth_register",
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  }
+                },
+                "required": ["email", "name", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Sign in",
+        "operationId": "post__api_auth_login",
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-email": {
+      "post": {
+        "summary": "verify-email",
+        "operationId": "post__api_auth_verify_email",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "summary": "reset-password",
+        "operationId": "post__api_auth_reset_password",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "summary": "forgot-password",
+        "operationId": "post__api_auth_forgot_password",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/resend-verification": {
+      "post": {
+        "summary": "resend-verification",
+        "operationId": "post__api_auth_resend_verification",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "refresh",
+        "operationId": "post__api_auth_refresh",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/google/complete": {
+      "post": {
+        "summary": "google/complete",
+        "operationId": "post__api_auth_google_complete",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "get": {
+        "summary": "Start Google OAuth",
+        "operationId": "get__api_auth_google",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/google/callback": {
+      "get": {
+        "summary": "Google OAuth callback",
+        "operationId": "get__api_auth_google_callback",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Revoke current session",
+        "operationId": "post__api_auth_logout",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Get current profile",
+        "operationId": "get__api_auth_me",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update profile",
+        "operationId": "patch__api_auth_me",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/csrf": {
+      "get": {
+        "summary": "Recover CSRF token using current refresh cookie",
+        "operationId": "get__api_auth_csrf",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "summary": "Change password and revoke sessions",
+        "operationId": "post__api_auth_change_password",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "currentPassword": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": ["currentPassword", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/sessions": {
+      "get": {
+        "summary": "List active sessions",
+        "operationId": "get__api_auth_sessions",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/sessions/{sessionId}": {
+      "delete": {
+        "summary": "Revoke session",
+        "operationId": "delete__api_auth_sessions__sessionId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/mfa/setup": {
+      "post": {
+        "summary": "Enroll authenticator",
+        "operationId": "post__api_auth_mfa_setup",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/mfa/confirm": {
+      "post": {
+        "summary": "Confirm authenticator",
+        "operationId": "post__api_auth_mfa_confirm",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": ["code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/mfa/disable": {
+      "post": {
+        "summary": "Disable MFA and revoke sessions",
+        "operationId": "post__api_auth_mfa_disable",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": ["code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces": {
+      "get": {
+        "summary": "List my workspaces",
+        "operationId": "get__api_workspaces",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create workspace",
+        "operationId": "post__api_workspaces",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}": {
+      "get": {
+        "summary": "Get workspace",
+        "operationId": "get__api_workspaces__workspaceId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update workspace settings",
+        "operationId": "patch__api_workspaces__workspaceId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "retentionDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3650
+                  },
+                  "aiEnabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/members": {
+      "get": {
+        "summary": "List members",
+        "operationId": "get__api_workspaces__workspaceId__members",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/members/{userId}": {
+      "patch": {
+        "summary": "Change member role",
+        "operationId": "patch__api_workspaces__workspaceId__members__userId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": ["admin", "member"]
+                  }
+                },
+                "required": ["role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove member or leave workspace",
+        "operationId": "delete__api_workspaces__workspaceId__members__userId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/transfer": {
+      "post": {
+        "summary": "Transfer ownership",
+        "operationId": "post__api_workspaces__workspaceId__transfer",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": ["userId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/invitations": {
+      "get": {
+        "summary": "List invitations",
+        "operationId": "get__api_workspaces__workspaceId__invitations",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "post": {
+        "summary": "Send invitation",
+        "operationId": "post__api_workspaces__workspaceId__invitations",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["admin", "member"]
+                  }
+                },
+                "required": ["email"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/invitations/{invitationId}": {
+      "delete": {
+        "summary": "Revoke invitation",
+        "operationId": "delete__api_workspaces__workspaceId__invitations__invitationId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "invitationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/invitations/accept": {
+      "post": {
+        "summary": "Accept invitation",
+        "operationId": "post__api_invitations_accept",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                },
+                "required": ["token"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/projects": {
+      "get": {
+        "summary": "List projects",
+        "operationId": "get__api_workspaces__workspaceId__projects",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create project",
+        "operationId": "post__api_workspaces__workspaceId__projects",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/projects/{projectId}": {
+      "patch": {
+        "summary": "Update or archive project",
+        "operationId": "patch__api_workspaces__workspaceId__projects__projectId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/tasks": {
+      "get": {
+        "summary": "List tasks",
+        "operationId": "get__api_workspaces__workspaceId__tasks",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create task",
+        "operationId": "post__api_workspaces__workspaceId__tasks",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/tasks/{taskId}": {
+      "patch": {
+        "summary": "Update task using version",
+        "operationId": "patch__api_workspaces__workspaceId__tasks__taskId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete task",
+        "operationId": "delete__api_workspaces__workspaceId__tasks__taskId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "summary": "List my notifications",
+        "operationId": "get__api_notifications",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/notifications/{notificationId}/read": {
+      "post": {
+        "summary": "Mark notification read",
+        "operationId": "post__api_notifications__notificationId__read",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/audit": {
+      "get": {
+        "summary": "List workspace audit events",
+        "operationId": "get__api_workspaces__workspaceId__audit",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/analytics": {
+      "get": {
+        "summary": "Aggregate workspace analytics",
+        "operationId": "get__api_workspaces__workspaceId__analytics",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/meetings": {
+      "get": {
+        "summary": "List or search accessible meetings",
+        "operationId": "get__api_workspaces__workspaceId__meetings",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "post": {
+        "summary": "Schedule meeting",
+        "operationId": "post__api_workspaces__workspaceId__meetings",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "durationMinutes": {
+                    "type": "integer"
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": ["workspace", "invite"]
+                  },
+                  "invitees": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "lobbyEnabled": {
+                    "type": "boolean"
+                  },
+                  "processingMode": {
+                    "type": "string",
+                    "enum": ["standard", "confidential"]
+                  }
+                },
+                "required": ["title", "startsAt"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}": {
+      "get": {
+        "summary": "Get meeting",
+        "operationId": "get__api_meetings__meetingId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update scheduled meeting or live title/lock",
+        "operationId": "patch__api_meetings__meetingId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Request permanent artifact deletion",
+        "operationId": "delete__api_meetings__meetingId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/start": {
+      "post": {
+        "summary": "start",
+        "operationId": "post__api_meetings__meetingId__start",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/end": {
+      "post": {
+        "summary": "end",
+        "operationId": "post__api_meetings__meetingId__end",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/cancel": {
+      "post": {
+        "summary": "cancel",
+        "operationId": "post__api_meetings__meetingId__cancel",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/leave": {
+      "post": {
+        "summary": "leave",
+        "operationId": "post__api_meetings__meetingId__leave",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/media-token": {
+      "post": {
+        "summary": "media-token",
+        "operationId": "post__api_meetings__meetingId__media_token",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/summarize": {
+      "post": {
+        "summary": "summarize",
+        "operationId": "post__api_meetings__meetingId__summarize",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/recordings/start": {
+      "post": {
+        "summary": "recordings/start",
+        "operationId": "post__api_meetings__meetingId__recordings_start",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/recordings/stop": {
+      "post": {
+        "summary": "recordings/stop",
+        "operationId": "post__api_meetings__meetingId__recordings_stop",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/join": {
+      "post": {
+        "summary": "Join lobby",
+        "operationId": "post__api_meetings__meetingId__join",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "aiConsent": {
+                    "type": "boolean"
+                  },
+                  "recordingConsent": {
+                    "type": "boolean"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/consent": {
+      "patch": {
+        "summary": "Change processing consent",
+        "operationId": "patch__api_meetings__meetingId__consent",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "aiConsent": {
+                    "type": "boolean"
+                  },
+                  "recordingConsent": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["aiConsent", "recordingConsent"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/participants": {
+      "get": {
+        "summary": "List participants",
+        "operationId": "get__api_meetings__meetingId__participants",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/participants/{userId}/admit": {
+      "post": {
+        "summary": "Admit participant",
+        "operationId": "post__api_meetings__meetingId__participants__userId__admit",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/participants/{userId}/remove": {
+      "post": {
+        "summary": "Remove participant",
+        "operationId": "post__api_meetings__meetingId__participants__userId__remove",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/participants/{userId}/media": {
+      "patch": {
+        "summary": "Change publishing permission",
+        "operationId": "patch__api_meetings__meetingId__participants__userId__media",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "canPublish": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["canPublish"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/transcript": {
+      "get": {
+        "summary": "Read transcript segments",
+        "operationId": "get__api_meetings__meetingId__transcript",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/summary": {
+      "get": {
+        "summary": "Read summary",
+        "operationId": "get__api_meetings__meetingId__summary",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/actions/{actionId}/accept": {
+      "post": {
+        "summary": "Approve action into task",
+        "operationId": "post__api_meetings__meetingId__actions__actionId__accept",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "actionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assigneeId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "dueAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/jobs/{jobId}": {
+      "get": {
+        "summary": "Get asynchronous job status",
+        "operationId": "get__api_jobs__jobId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/export": {
+      "get": {
+        "summary": "Export JSON, Markdown or WebVTT",
+        "operationId": "get__api_meetings__meetingId__export",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/jobs/{jobId}/retry": {
+      "post": {
+        "summary": "Retry failed job after reauthorization",
+        "operationId": "post__api_jobs__jobId__retry",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/audio-uploads": {
+      "post": {
+        "summary": "Reserve a private audio upload",
+        "operationId": "post__api_meetings__meetingId__audio_uploads",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "contentType": {
+                    "type": "string",
+                    "enum": ["audio/webm", "audio/wav", "audio/mpeg", "audio/mp4"]
+                  },
+                  "size": {
+                    "type": "integer"
+                  },
+                  "startSeconds": {
+                    "type": "number"
+                  },
+                  "durationSeconds": {
+                    "type": "number",
+                    "maximum": 300
+                  }
+                },
+                "required": ["contentType", "size", "startSeconds", "durationSeconds"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/assets/{assetId}/complete": {
+      "post": {
+        "summary": "Validate and seal uploaded audio; enqueue transcription",
+        "operationId": "post__api_assets__assetId__complete",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/assets": {
+      "get": {
+        "summary": "List private meeting assets",
+        "operationId": "get__api_meetings__meetingId__assets",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/assets/{assetId}/download": {
+      "get": {
+        "summary": "Create short-lived download URL",
+        "operationId": "get__api_assets__assetId__download",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/assets/{assetId}": {
+      "delete": {
+        "summary": "Delete stored asset",
+        "operationId": "delete__api_assets__assetId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/messages": {
+      "get": {
+        "summary": "Read durable chat history",
+        "operationId": "get__api_meetings__meetingId__messages",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "post": {
+        "summary": "Send idempotent chat message",
+        "operationId": "post__api_meetings__meetingId__messages",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "clientId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "mentions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": ["clientId", "text"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/messages/{messageId}": {
+      "delete": {
+        "summary": "Delete chat message",
+        "operationId": "delete__api_meetings__meetingId__messages__messageId_",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/meetings/{meetingId}/notes": {
+      "get": {
+        "summary": "Get collaborative notes",
+        "operationId": "get__api_meetings__meetingId__notes",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace notes with optimistic concurrency",
+        "operationId": "put__api_meetings__meetingId__notes",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Required when authenticating using cookies",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["text", "revision"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; see API guide for resource shape"
+          },
+          "201": {
+            "description": "Resource created"
+          },
+          "202": {
+            "description": "Asynchronous operation accepted"
+          },
+          "204": {
+            "description": "Successful operation with no response body"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or consent denied"
+          },
+          "404": {
+            "description": "Resource not found or inaccessible"
+          },
+          "409": {
+            "description": "State or version conflict"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    }
+  }
+}
