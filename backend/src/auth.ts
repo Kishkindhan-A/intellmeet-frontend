@@ -175,6 +175,7 @@ async function sendToken(rt: Runtime, kind: 'verify' | 'reset', userId: string, 
     address,
     kind === 'reset' ? 'Reset your IntellMeet password' : 'Verify your IntellMeet email',
     `Open ${rt.config.APP_URL}/${kind === 'reset' ? 'reset-password' : 'verify-email'}#token=${raw}\nThis link is single-use. If you did not request it, ignore this email.`,
+    kind === 'reset' ? undefined : 'verification',
   );
 }
 async function validateMfa(

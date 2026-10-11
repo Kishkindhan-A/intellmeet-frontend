@@ -46,6 +46,8 @@ export const configSchema = z.object({
   ),
   METRICS_TOKEN: optional,
   SMTP_URL: optional,
+  RESEND_VERIFICATION_API_KEY: optional,
+  RESEND_TEST_RECIPIENT: z.preprocess((v) => (v === '' ? undefined : v), z.email().optional()),
   EMAIL_FROM: z.string().default('IntellMeet <no-reply@localhost>'),
   OPENAI_API_KEY: optional,
   OPENAI_SUMMARY_MODEL: z.string().default('gpt-4.1-mini'),

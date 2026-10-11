@@ -8,6 +8,7 @@ import { randomBytes } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { Redis } from 'ioredis';
+import { parse } from 'dotenv';
 
 const root = resolve('.');
 const services = process.argv.includes('--services');
@@ -184,6 +185,12 @@ try {
     instanceOpts: [{ port: 27018, dbPath: join(directory, 'mongo') }],
     replSet: { count: 1, storageEngine: 'wiredTiger', ip: '127.0.0.1' },
   });
+  let verificationEmail = {};
+  try {
+    verificationEmail = parse(await readFile(join(root, '.env.resend.local'), 'utf8'));
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
   const env = {
     ...process.env,
     NODE_ENV: 'development',
@@ -191,10 +198,15 @@ try {
     PORT: '4000',
     APP_URL: 'http://localhost:5173',
     API_URL: 'http://localhost:4000',
-    CORS_ORIGINS: 'http://localhost:5173,http://localhost:4000',
+    // Browsers treat localhost and 127.0.0.1 as distinct origins. Both are
+    // supported loopback entry points for the local frontend and API.
+    CORS_ORIGINS:
+      'http://localhost:5173,http://127.0.0.1:5173,http://localhost:4000,http://127.0.0.1:4000',
     MONGODB_URI: mongo.getUri('intellmeet_local'),
     REDIS_URL: redisUrl,
     SMTP_URL: 'smtp://127.0.0.1:1026',
+    RESEND_VERIFICATION_API_KEY: verificationEmail.RESEND_VERIFICATION_API_KEY || '',
+    RESEND_TEST_RECIPIENT: verificationEmail.RESEND_TEST_RECIPIENT || '',
     EMAIL_FROM: 'IntellMeet Local <no-reply@example.test>',
     JWT_SECRET: credentials.jwt,
     ENCRYPTION_KEY: credentials.encryption,
@@ -220,7 +232,7 @@ try {
     const livekitConfig = join(directory, 'livekit.yaml');
     await writeFile(
       livekitConfig,
-      `port: 7880\nbind_addresses: ["127.0.0.1"]\nrtc:\n  tcp_port: 7881\n  udp_port: 7882\n  use_external_ip: false\n  node_ip: 127.0.0.1\nredis:\n  address: 127.0.0.1:6380\n  password: ${credentials.redis}\nkeys:\n  ${credentials.livekitKey}: ${credentials.livekitSecret}\nwebhook:\n  api_key: ${credentials.livekitKey}\n  urls: ["http://127.0.0.1:4000/webhooks/livekit"]\n`,
+      `port: 7880\nbind_addresses: ["127.0.0.1"]\nrtc:\n  tcp_port: 7881\n  udp_port: 7882\n  use_external_ip: false\n  node_ip: 127.0.0.1\n  enable_loopback_candidate: true\nredis:\n  address: 127.0.0.1:6380\n  password: ${credentials.redis}\nkeys:\n  ${credentials.livekitKey}: ${credentials.livekitSecret}\nwebhook:\n  api_key: ${credentials.livekitKey}\n  urls: ["http://127.0.0.1:4000/webhooks/livekit"]\n`,
       { mode: 0o600 },
     );
     start('livekit', join(root, '.data/tools/livekit/livekit-server.exe'), [

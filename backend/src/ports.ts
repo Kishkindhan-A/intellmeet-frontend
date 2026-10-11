@@ -1,7 +1,7 @@
 import type { Config } from './config.js';
 import type { Logger } from 'pino';
 export interface Mailer {
-  send(to: string, subject: string, text: string): Promise<void>;
+  send(to: string, subject: string, text: string, purpose?: 'verification'): Promise<void>;
 }
 export interface Storage {
   uploadUrl(key: string, contentType: string, size: number): Promise<string>;

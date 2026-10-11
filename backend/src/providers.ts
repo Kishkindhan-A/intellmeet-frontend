@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis';
 import { Queue } from 'bullmq';
-import nodemailer from 'nodemailer';
+import { createMailer } from './mailer.js';
 import {
   S3Client,
   PutObjectCommand,
@@ -62,7 +62,7 @@ export function createRuntime(config: Config) {
   const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1, connectTimeout: 5000 });
   redis.on('error', () => logger.error('Redis connection error'));
   const queue = new Queue(queueName, { connection: redis });
-  const transport = config.SMTP_URL ? nodemailer.createTransport(config.SMTP_URL) : null;
+  const mailer = createMailer(config);
   const credentials =
     config.S3_ACCESS_KEY_ID && config.S3_SECRET_ACCESS_KEY
       ? { accessKeyId: config.S3_ACCESS_KEY_ID, secretAccessKey: config.S3_SECRET_ACCESS_KEY }
@@ -102,12 +102,7 @@ export function createRuntime(config: Config) {
   const runtime: Runtime = {
     config,
     logger,
-    mail: {
-      async send(to, subject, text) {
-        assert(transport, 503, 'MAIL_UNAVAILABLE', 'Email delivery is not configured');
-        await transport.sendMail({ from: config.EMAIL_FROM, to, subject, text });
-      },
-    },
+    mail: mailer,
     storage: {
       async uploadUrl(key, contentType, size) {
         return getSignedUrl(
@@ -397,7 +392,7 @@ export function createRuntime(config: Config) {
       await redis.quit();
       s3.destroy();
       publicS3.destroy();
-      transport?.close();
+      mailer.close();
     },
   };
 }
