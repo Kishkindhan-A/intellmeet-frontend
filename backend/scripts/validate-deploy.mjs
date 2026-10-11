@@ -2,8 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { parseAllDocuments } from 'yaml';
 for (const file of [
   'compose.yaml',
-  '.github/workflows/ci.yml',
-  '.github/workflows/security.yml',
+  '../.github/workflows/ci.yml',
+  '../.github/workflows/security.yml',
   'deploy/kubernetes.yaml',
 ]) {
   const docs = parseAllDocuments(await readFile(file, 'utf8'));
