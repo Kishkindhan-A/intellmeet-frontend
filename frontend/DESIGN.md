@@ -36,3 +36,7 @@ Use an explicit busy state for writes, disable duplicate submissions, keep error
 ## Validation and remaining launch work
 
 Test desktop and mobile navigation, search result opening, weekly navigation, persisted task status, email verification, consent, chat, note revision conflict handling and media connectivity. Browser media tests use synthetic devices. Real multi-person camera, microphone and screen-sharing exchange, user usability sessions, screen-reader testing and a full accessibility audit remain launch checks. Company service configuration is required for AI processing and recording. No Figma MCP is connected in this environment; the design is implemented directly as reusable React and CSS components and verified with Playwright MCP.
+
+## UI refresh — 18 October 2026
+
+See [UI_REVIEW.md](UI_REVIEW.md) for the new interactive landing page, refreshed workspace treatment, MagicPath direction board, current tokens, browser verification and known limitations. The latest refresh uses separate metric cards in place of the earlier shared strip. Earlier research and product constraints above remain useful context.

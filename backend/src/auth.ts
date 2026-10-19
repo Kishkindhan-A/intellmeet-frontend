@@ -19,6 +19,12 @@ import {
   token,
 } from './lib.js';
 import type { Runtime } from './ports.js';
+import { verificationEmail } from './emails.js';
+import { createHmac, randomInt } from 'node:crypto';
+const otpHash = (rt: Runtime, userId: string, code: string) =>
+  createHmac('sha256', rt.config.JWT_SECRET)
+    .update(`email-verification\0${userId}\0${code}`)
+    .digest('hex');
 
 const secretKey = (rt: Runtime) => new TextEncoder().encode(rt.config.JWT_SECRET);
 const publicUser = (u: {
@@ -164,19 +170,60 @@ async function createSession(
 }
 async function sendToken(rt: Runtime, kind: 'verify' | 'reset', userId: string, address: string) {
   if (!(await rt.coordinator.consume(`email:${kind}:${hash(address)}`, 3, 3600))) return;
-  const raw = token();
-  await OneTimeToken.create({
-    hash: hash(raw),
-    userId,
-    kind,
-    expiresAt: new Date(Date.now() + (kind === 'reset' ? 1800000 : 86400000)),
-  });
-  await rt.mail.send(
-    address,
-    kind === 'reset' ? 'Reset your IntellMeet password' : 'Verify your IntellMeet email',
-    `Open ${rt.config.APP_URL}/${kind === 'reset' ? 'reset-password' : 'verify-email'}#token=${raw}\nThis link is single-use. If you did not request it, ignore this email.`,
-    kind === 'reset' ? undefined : 'verification',
-  );
+  const deliver = async () => {
+    const user = kind === 'verify' ? await User.findOne({ _id: userId, verified: false }) : null;
+    if (kind === 'verify' && !user) return;
+    const raw = token();
+    const link = await OneTimeToken.create({
+      hash: hash(raw),
+      userId,
+      kind,
+      expiresAt: new Date(Date.now() + (kind === 'reset' ? 1800000 : 86400000)),
+    });
+    let otp = '';
+    let otpRecord: { _id: string } | undefined;
+    try {
+      if (kind === 'verify') {
+        do {
+          otp = randomInt(0, 1000000).toString().padStart(6, '0');
+        } while (await OneTimeToken.exists({ hash: otpHash(rt, userId, otp) }));
+        otpRecord = await OneTimeToken.create({
+          userId,
+          kind: 'verify-otp',
+          hash: otpHash(rt, userId, otp),
+          attempts: 0,
+          expiresAt: new Date(Date.now() + 600000),
+        });
+      }
+      const message =
+        kind === 'verify' ? verificationEmail(rt.config.APP_URL, raw, user!.name, otp) : null;
+      await rt.mail.send(
+        address,
+        message?.subject ?? 'Reset your IntellMeet password',
+        message?.text ??
+          `Open ${rt.config.APP_URL}/reset-password#token=${raw}\nThis link is single-use and expires in 30 minutes. If you did not request it, ignore this email.`,
+        kind === 'reset' ? undefined : 'verification',
+        message?.html,
+      );
+    } catch {
+      await OneTimeToken.deleteOne({ _id: link._id });
+      if (otpRecord) await OneTimeToken.deleteOne({ _id: otpRecord._id });
+      throw new HttpError(
+        503,
+        'MAIL_UNAVAILABLE',
+        'Email could not be delivered. Try again later.',
+      );
+    }
+    // Failed sends preserve earlier working links; accepted resends replace them.
+    if (kind === 'verify')
+      await OneTimeToken.deleteMany({
+        userId,
+        kind: { $in: ['verify', 'verify-otp'] },
+        _id: { $nin: [link._id, otpRecord!._id] },
+      });
+  };
+  if (kind === 'verify') await rt.coordinator.lock(`verification:${userId}`, deliver);
+  else await deliver();
 }
 async function validateMfa(
   rt: Runtime,
@@ -209,6 +256,9 @@ async function validateMfa(
 export function authRoutes(rt: Runtime) {
   const router = Router();
   const auth = requireAuth(rt);
+  router.get('/config', (_req, res) =>
+    res.json({ emailVerificationRequired: rt.config.REQUIRE_EMAIL_VERIFICATION }),
+  );
   router.use(async (req, _res, next) => {
     try {
       if (['GET', 'HEAD'].includes(req.method) && !req.path.startsWith('/google')) return next();
@@ -227,13 +277,28 @@ export function authRoutes(rt: Runtime) {
     const input = body(z.object({ email, name: text(100), password }).strict(), req);
     const exists = await User.exists({ email: input.email });
     if (!exists) {
-      const user = await User.create({
-        email: input.email,
-        name: input.name,
-        passwordHash: await hashPassword(input.password),
-      });
-      await sendToken(rt, 'verify', user._id, user.email);
-      await audit(req, 'auth.register', user._id);
+      let user;
+      try {
+        user = await User.create({
+          email: input.email,
+          name: input.name,
+          passwordHash: await hashPassword(input.password),
+        });
+      } catch (error) {
+        // A concurrent registration may win the unique-email index race.
+        if (!(
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          error.code === 11000
+        ))
+          throw error;
+      }
+      if (user) {
+        if (rt.config.REQUIRE_EMAIL_VERIFICATION)
+          await sendToken(rt, 'verify', user._id, user.email);
+        await audit(req, 'auth.register', user._id);
+      }
     }
     res
       .status(202)
@@ -241,33 +306,94 @@ export function authRoutes(rt: Runtime) {
   });
   router.post('/verify-email', async (req, res) => {
     const input = body(z.object({ token: text(200) }).strict(), req);
-    await mongoose.connection.transaction(async (transaction) => {
-      const one = await OneTimeToken.findOneAndDelete(
-        {
-          hash: hash(input.token),
-          kind: 'verify',
-          expiresAt: { $gt: new Date() },
-        },
-        { session: transaction },
-      );
-      assert(one, 400, 'TOKEN_INVALID', 'Link is invalid or expired');
-      await User.updateOne(
-        { _id: one.userId },
-        { $set: { verified: true } },
-        { session: transaction },
-      );
+    const candidate = await OneTimeToken.findOne({
+      hash: hash(input.token),
+      kind: 'verify',
+      expiresAt: { $gt: new Date() },
+    });
+    const invalidMessage =
+      'This verification link is invalid, expired, or already used. Request a new link if needed.';
+    assert(candidate?.userId, 400, 'TOKEN_INVALID', invalidMessage);
+    await rt.coordinator.lock(`verification:${candidate.userId}`, () =>
+      mongoose.connection.transaction(async (transaction) => {
+        const one = await OneTimeToken.findOneAndDelete(
+          {
+            hash: hash(input.token),
+            kind: 'verify',
+            expiresAt: { $gt: new Date() },
+          },
+          { session: transaction },
+        );
+        assert(one?.userId, 400, 'TOKEN_INVALID', invalidMessage);
+        const result = await User.updateOne(
+          { _id: one.userId, verified: false },
+          { $set: { verified: true } },
+          { session: transaction },
+        );
+        assert(result.matchedCount === 1, 400, 'TOKEN_INVALID', invalidMessage);
+        await OneTimeToken.deleteMany(
+          { userId: one.userId, kind: { $in: ['verify', 'verify-otp'] } },
+          { session: transaction },
+        );
+      }),
+    );
+    res.json({ message: 'Email verified' });
+  });
+  router.post('/verify-email-otp', async (req, res) => {
+    const input = body(z.object({ email, code: z.string().regex(/^\d{6}$/) }).strict(), req);
+    assert(
+      await rt.coordinator.consume(`verify-otp:${hash(input.email)}`, 20, 900),
+      429,
+      'RATE_LIMITED',
+      'Too many code attempts. Try again later.',
+    );
+    const invalid =
+      'The code is incorrect, expired, or already used. Request a new code if needed.';
+    const user = await User.findOne({ email: input.email, verified: false });
+    assert(user, 400, 'OTP_INVALID', invalid);
+    await rt.coordinator.lock(`verification:${user._id}`, async () => {
+      const challenge = await OneTimeToken.findOne({
+        userId: user._id,
+        kind: 'verify-otp',
+        expiresAt: { $gt: new Date() },
+      });
+      assert(challenge && challenge.attempts < 5, 400, 'OTP_INVALID', invalid);
+      if (!safeEqual(challenge.hash, otpHash(rt, user._id, input.code))) {
+        await OneTimeToken.updateOne({ _id: challenge._id }, { $inc: { attempts: 1 } });
+        throw new HttpError(400, 'OTP_INVALID', invalid);
+      }
+      await mongoose.connection.transaction(async (session) => {
+        const consumed = await OneTimeToken.findOneAndDelete(
+          { _id: challenge._id, attempts: { $lt: 5 }, expiresAt: { $gt: new Date() } },
+          { session },
+        );
+        assert(consumed, 400, 'OTP_INVALID', invalid);
+        const updated = await User.updateOne(
+          { _id: user._id, verified: false },
+          { $set: { verified: true } },
+          { session },
+        );
+        assert(updated.matchedCount === 1, 400, 'OTP_INVALID', invalid);
+        await OneTimeToken.deleteMany(
+          { userId: user._id, kind: { $in: ['verify', 'verify-otp'] } },
+          { session },
+        );
+      });
     });
     res.json({ message: 'Email verified' });
   });
   router.post('/resend-verification', async (req, res) => {
     const input = body(z.object({ email }).strict(), req);
     const user = await User.findOne({ email: input.email, verified: false });
-    if (user) await sendToken(rt, 'verify', user._id, user.email);
+    if (user && rt.config.REQUIRE_EMAIL_VERIFICATION)
+      await sendToken(rt, 'verify', user._id, user.email);
     res.status(202).json({ message: 'If eligible, a verification email has been sent.' });
   });
   router.post('/login', async (req, res) => {
     const input = body(
-      z.object({ email, password: z.string().max(128), code: text(100).optional() }).strict(),
+      z
+        .object({ email, password: z.string().min(1).max(128), code: text(100).optional() })
+        .strict(),
       req,
     );
     assert(
@@ -282,7 +408,12 @@ export function authRoutes(rt: Runtime) {
       ? await argon2.verify(user.passwordHash, input.password)
       : (await hashPassword(input.password), false);
     assert(valid && user, 401, 'INVALID_CREDENTIALS', 'Invalid email or password');
-    assert(user.verified, 403, 'EMAIL_UNVERIFIED', 'Verify your email before signing in');
+    assert(
+      !rt.config.REQUIRE_EMAIL_VERIFICATION || user.verified,
+      403,
+      'EMAIL_UNVERIFIED',
+      'Verify your email before signing in',
+    );
     if (user.mfaEnabled) await validateMfa(rt, user, input.code);
     const session = await createSession(
       rt,
@@ -452,6 +583,7 @@ export function authRoutes(rt: Runtime) {
   });
   router.get('/sessions', auth, async (req, res) => {
     res.json({
+      currentSessionId: req.auth!.sessionId,
       sessions: await Session.find({
         userId: req.auth!.userId,
         revokedAt: null,

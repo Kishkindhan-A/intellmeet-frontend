@@ -7,11 +7,40 @@ import { resolve, join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
-import { Redis } from 'ioredis';
 import { parse } from 'dotenv';
+import { Redis } from 'ioredis';
 
 const root = resolve('.');
 const services = process.argv.includes('--services');
+const liveEmail = process.argv.includes('--live-email');
+const emailDisabled = process.argv.includes('--email-disabled');
+if (liveEmail && emailDisabled) throw new Error('Choose one email mode.');
+let sender = {};
+if (liveEmail) {
+  try {
+    sender = parse(await readFile(join(root, '.env.mail.local'), 'utf8'));
+  } catch {
+    throw new Error('Create .env.mail.local with SMTP_URL and EMAIL_FROM for the live sender.');
+  }
+  let endpoint;
+  try {
+    endpoint = new URL(sender.SMTP_URL);
+  } catch {
+    throw new Error('Live email requires a valid SMTP_URL in .env.mail.local.');
+  }
+  if (
+    endpoint.protocol !== 'smtps:' ||
+    !endpoint.username ||
+    !endpoint.password ||
+    ['localhost', '127.0.0.1', '[::1]'].includes(endpoint.hostname) ||
+    /YOUR_|REPLACE_/i.test(sender.SMTP_URL) ||
+    !sender.EMAIL_FROM ||
+    /[\r\n]/.test(sender.EMAIL_FROM)
+  )
+    throw new Error(
+      'Configure a real authenticated smtps:// sender and EMAIL_FROM before starting live email.',
+    );
+}
 const directory = join(root, '.data', 'local-run');
 await mkdir(directory, { recursive: true });
 const stopFile = join(directory, 'stop');
@@ -171,26 +200,22 @@ try {
     throw new Error('Redis failed to start; inspect redis.log');
   }
   await probe.quit();
-  start('mailpit', mailpitExe, [
-    '--smtp',
-    '127.0.0.1:1026',
-    '--listen',
-    '127.0.0.1:8026',
-    '--database',
-    join(directory, 'mailpit.db'),
-  ]);
-  await waitHttp('http://127.0.0.1:8026/readyz');
+  if (!liveEmail && !emailDisabled) {
+    start('mailpit', mailpitExe, [
+      '--smtp',
+      '127.0.0.1:1026',
+      '--listen',
+      '127.0.0.1:8026',
+      '--database',
+      join(directory, 'mailpit.db'),
+    ]);
+    await waitHttp('http://127.0.0.1:8026/readyz');
+  }
   mongo = await MongoMemoryReplSet.create({
     binary: { version: '8.2.6' },
     instanceOpts: [{ port: 27018, dbPath: join(directory, 'mongo') }],
     replSet: { count: 1, storageEngine: 'wiredTiger', ip: '127.0.0.1' },
   });
-  let verificationEmail = {};
-  try {
-    verificationEmail = parse(await readFile(join(root, '.env.resend.local'), 'utf8'));
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw err;
-  }
   const env = {
     ...process.env,
     NODE_ENV: 'development',
@@ -204,14 +229,13 @@ try {
       'http://localhost:5173,http://127.0.0.1:5173,http://localhost:4000,http://127.0.0.1:4000',
     MONGODB_URI: mongo.getUri('intellmeet_local'),
     REDIS_URL: redisUrl,
-    SMTP_URL: 'smtp://127.0.0.1:1026',
-    RESEND_VERIFICATION_API_KEY: verificationEmail.RESEND_VERIFICATION_API_KEY || '',
-    RESEND_TEST_RECIPIENT: verificationEmail.RESEND_TEST_RECIPIENT || '',
-    EMAIL_FROM: 'IntellMeet Local <no-reply@example.test>',
+    SMTP_URL: emailDisabled ? '' : liveEmail ? sender.SMTP_URL : 'smtp://127.0.0.1:1026',
+    EMAIL_FROM: liveEmail ? sender.EMAIL_FROM : 'IntellMeet Local <no-reply@example.test>',
     JWT_SECRET: credentials.jwt,
     ENCRYPTION_KEY: credentials.encryption,
     METRICS_TOKEN: credentials.metrics,
     REQUIRE_ADMIN_MFA: 'false',
+    REQUIRE_EMAIL_VERIFICATION: 'false',
     MAINTENANCE_MODE: 'false',
     OPENAI_API_KEY: '',
     LIVEKIT_URL: '',
@@ -306,7 +330,8 @@ try {
       {
         pid: process.pid,
         api: 'http://localhost:4000',
-        inbox: 'http://localhost:8026',
+        inbox: liveEmail || emailDisabled ? undefined : 'http://localhost:8026',
+        emailMode: emailDisabled ? 'unconfigured' : liveEmail ? 'live' : 'captured',
         services,
         startedAt: new Date().toISOString(),
       },
@@ -315,10 +340,16 @@ try {
     ),
   );
   console.log('Backend ready: http://localhost:4000/health/ready');
-  console.log('Captured development email: http://localhost:8026');
+  console.log(
+    emailDisabled
+      ? 'Outgoing email disabled until the real sender is configured.'
+      : liveEmail
+        ? 'Live SMTP email enabled. Sender credentials are not logged.'
+        : 'Captured development email: http://localhost:8026',
+  );
   console.log(
     services
-      ? 'Local MongoDB/Redis/SMTP/LiveKit/S3 active; OpenAI and Google login disabled. Recording requires an egress service.'
+      ? `Local MongoDB/Redis/LiveKit/S3 active; ${emailDisabled ? 'outgoing email disabled' : liveEmail ? 'real SMTP sender enabled' : 'captured SMTP enabled'}. OpenAI and Google login disabled. Recording requires an egress service.`
       : 'Real MongoDB/Redis/SMTP; LiveKit, OpenAI and Google login disabled in this isolated run.',
   );
   console.log('Stop with: npm run local:stop');

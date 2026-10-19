@@ -22,16 +22,18 @@ import {
   Session,
   Task,
   User,
+  OneTimeToken,
   SupportTicket,
 } from '../src/db.js';
-import { HttpError } from '../src/lib.js';
+import { hash, HttpError } from '../src/lib.js';
+import { SignJWT } from 'jose';
 import { processJob, housekeeping } from '../src/jobs.js';
 import { attachRealtime } from '../src/realtime.js';
 import { finishRecording } from '../src/webhooks.js';
 import type { Runtime, SummaryResult } from '../src/ports.js';
 
 let mongo: MongoMemoryReplSet;
-const mails: { to: string; subject: string; text: string }[] = [];
+const mails: { to: string; subject: string; text: string; html?: string }[] = [];
 const objects = new Map<string, { data: Buffer; type: string }>();
 const queued: string[] = [];
 const events: { event: string; payload: unknown }[] = [];
@@ -51,8 +53,8 @@ const rt: Runtime = {
   config,
   logger: pino({ level: 'silent' }),
   mail: {
-    async send(to, subject, text) {
-      mails.push({ to, subject, text });
+    async send(to, subject, text, _purpose, html) {
+      mails.push({ to, subject, text, html });
     },
   },
   storage: {
@@ -231,6 +233,501 @@ beforeAll(async () => {
 afterAll(async () => {
   await mongoose.disconnect();
   await mongo?.stop();
+});
+
+describe('local login without email verification', () => {
+  it('registers and authenticates without sending mail or falsely marking the address verified', async () => {
+    const local = createApp({ ...rt, config: { ...config, REQUIRE_EMAIL_VERIFICATION: false } });
+    const address = 'no-verification@example.test';
+    const before = mails.length;
+    const policy = await request(local).get('/api/auth/config').expect(200);
+    expect(policy.body).toEqual({ emailVerificationRequired: false });
+    await request(local)
+      .post('/api/auth/register')
+      .send({ email: address, name: 'Local User', password: 'correct horse battery staple' })
+      .expect(202);
+    expect(mails).toHaveLength(before);
+    const user = await User.findOne({ email: address });
+    expect(user!.verified).toBe(false);
+    expect(await OneTimeToken.countDocuments({ userId: user!._id })).toBe(0);
+    const login = await request(local)
+      .post('/api/auth/login')
+      .send({ email: address, password: 'correct horse battery staple' })
+      .expect(200);
+    expect(login.body.user.verified).toBe(false);
+    await request(local)
+      .get('/api/workspaces')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .expect(200);
+    await request(local)
+      .post('/api/auth/login')
+      .send({ email: address, password: 'incorrect password' })
+      .expect(401);
+    await request(local).post('/api/auth/resend-verification').send({ email: address }).expect(202);
+    expect(mails).toHaveLength(before);
+    await request(local)
+      .post('/api/auth/logout')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .expect(204);
+    await request(local)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .expect(401);
+  });
+  it('prevents accidentally disabling email verification in production configuration', () => {
+    expect(() =>
+      readConfig({
+        NODE_ENV: 'production',
+        REQUIRE_EMAIL_VERIFICATION: 'false',
+        JWT_SECRET: 'test-secret-'.repeat(5),
+        ENCRYPTION_KEY: 'a'.repeat(64),
+      }),
+    ).toThrow('Production requires REQUIRE_EMAIL_VERIFICATION=true');
+  });
+});
+
+describe('email OTP verification', () => {
+  const pending = async (name: string) => {
+    const email = `${name.toLowerCase()}@example.test`;
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email, name, password: 'correct horse battery staple' })
+      .expect(202);
+    const code = mails
+      .findLast((mail) => mail.to === email)!
+      .text.match(/verification code: (\d{6})/)![1]!;
+    const user = await User.findOne({ email });
+    return { email, code, user: user! };
+  };
+  it('stores a keyed digest and verifies only the code owner, then consumes code and fallback links', async () => {
+    const first = await pending('OtpFirst');
+    const second = await pending('OtpSecond');
+    const stored = await OneTimeToken.findOne({ userId: first.user._id, kind: 'verify-otp' });
+    expect(stored!.hash).not.toBe(hash(first.code));
+    expect(stored!.hash).toHaveLength(64);
+    expect(stored!.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(600000);
+    const wrong = first.code === '000000' ? '000001' : '000000';
+    await request(app)
+      .post('/api/auth/verify-email-otp')
+      .send({ email: first.email, code: wrong })
+      .expect(400);
+    await request(app)
+      .post('/api/auth/verify-email-otp')
+      .send({ email: 'unknown-otp@example.test', code: first.code })
+      .expect(400);
+    await request(app)
+      .post('/api/auth/verify-email-otp')
+      .send({ email: first.email, code: first.code })
+      .expect(200);
+    expect((await User.findById(first.user._id))!.verified).toBe(true);
+    expect((await User.findById(second.user._id))!.verified).toBe(false);
+    expect(
+      await OneTimeToken.countDocuments({
+        userId: first.user._id,
+        kind: { $in: ['verify', 'verify-otp'] },
+      }),
+    ).toBe(0);
+    await request(app)
+      .post('/api/auth/verify-email-otp')
+      .send({ email: first.email, code: first.code })
+      .expect(400);
+  });
+  it('exhausts a challenge after five wrong attempts and replaces it on resend', async () => {
+    const actor = await pending('OtpAttempts');
+    const wrong = actor.code === '000000' ? '000001' : '000000';
+    for (let attempt = 0; attempt < 5; attempt++)
+      await request(app)
+        .post('/api/auth/verify-email-otp')
+        .send({ email: actor.email, code: wrong })
+        .expect(400);
+    await request(app)
+      .post('/api/auth/verify-email-otp')
+      .send({ email: actor.email, code: actor.code })
+      .expect(400);
+    await request(app)
+      .post('/api/auth/resend-verification')
+      .send({ email: actor.email })
+      .expect(202);
+    const next = mails
+      .findLast((mail) => mail.to === actor.email)!
+      .text.match(/verification code: (\d{6})/)![1];
+    expect(next).not.toBe(actor.code);
+    await request(app)
+      .post('/api/auth/verify-email-otp')
+      .send({ email: actor.email, code: actor.code })
+      .expect(400);
+    await request(app)
+      .post('/api/auth/verify-email-otp')
+      .send({ email: actor.email, code: next })
+      .expect(200);
+  });
+  it('rejects expired and malformed codes and keeps unverified users blocked', async () => {
+    const actor = await pending('OtpExpired');
+    await OneTimeToken.updateMany(
+      { userId: actor.user._id, kind: 'verify-otp' },
+      { $set: { expiresAt: new Date(Date.now() - 1000) } },
+    );
+    await request(app)
+      .post('/api/auth/verify-email-otp')
+      .send({ email: actor.email, code: actor.code })
+      .expect(400);
+    await request(app)
+      .post('/api/auth/verify-email-otp')
+      .send({ email: actor.email, code: '123' })
+      .expect(400);
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: actor.email, password: 'correct horse battery staple' })
+      .expect(403);
+  });
+});
+
+describe('automatic email verification', () => {
+  const register = async (name: string) => {
+    const email = `${name.toLowerCase()}@example.test`;
+    const result = await request(app)
+      .post('/api/auth/register')
+      .send({ name, email, password: 'correct horse battery staple' })
+      .expect(202);
+    const user = await User.findOne({ email });
+    const mail = mails.findLast((message) => message.to === email)!;
+    const token = mail.text.match(/#token=([^\s]+)/)![1]!;
+    expect(JSON.stringify(result.body)).not.toContain(token);
+    return { user: user!, mail, token, email };
+  };
+  it('sends distinct HTML links to the two supplied addresses and verifies only the token owner', async () => {
+    const first = await register('VerifyFirst');
+    const second = await register('VerifySecond');
+    expect(first.token).not.toBe(second.token);
+    expect(first.token).toHaveLength(43);
+    expect(first.user.verified).toBe(false);
+    expect(second.user.verified).toBe(false);
+    expect(first.mail.html).toContain('Verify Email Address');
+    expect(first.mail.to).toBe(first.email);
+    const stored = await OneTimeToken.findOne({ userId: first.user._id, kind: 'verify' });
+    expect(stored!.hash).toBe(hash(first.token));
+    expect(JSON.stringify(stored)).not.toContain(first.token);
+    await request(app)
+      .post('/api/auth/verify-email')
+      .send({ token: first.token, userId: second.user._id })
+      .expect(400);
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: first.email, password: 'correct horse battery staple' })
+      .expect(403);
+    await request(app).post('/api/auth/verify-email').send({ token: first.token }).expect(200);
+    expect((await User.findById(first.user._id))!.verified).toBe(true);
+    expect((await User.findById(second.user._id))!.verified).toBe(false);
+    await request(app).post('/api/auth/verify-email').send({ token: first.token }).expect(400);
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: first.email, password: 'correct horse battery staple' })
+      .expect(200);
+  });
+  it('replaces earlier links on successful resend and does not send to verified or unknown accounts', async () => {
+    const actor = await register('VerifyResend');
+    const response = await request(app)
+      .post('/api/auth/resend-verification')
+      .send({ email: actor.email })
+      .expect(202);
+    const replacement = mails
+      .findLast((message) => message.to === actor.email)!
+      .text.match(/#token=([^\s]+)/)![1]!;
+    expect(replacement).not.toBe(actor.token);
+    expect(await OneTimeToken.countDocuments({ userId: actor.user._id, kind: 'verify' })).toBe(1);
+    await request(app).post('/api/auth/verify-email').send({ token: actor.token }).expect(400);
+    await request(app).post('/api/auth/verify-email').send({ token: replacement }).expect(200);
+    const before = mails.length;
+    const verified = await request(app)
+      .post('/api/auth/resend-verification')
+      .send({ email: actor.email })
+      .expect(202);
+    const unknown = await request(app)
+      .post('/api/auth/resend-verification')
+      .send({ email: 'verification-unknown@example.test' })
+      .expect(202);
+    expect(verified.body).toEqual(response.body);
+    expect(unknown.body).toEqual(response.body);
+    expect(mails).toHaveLength(before);
+  });
+  it('preserves the old verification link if a resend fails and allows a retry', async () => {
+    const actor = await register('VerifyDeliveryFailure');
+    const failure = vi
+      .spyOn(rt.mail, 'send')
+      .mockRejectedValueOnce(new Error('private SMTP error'));
+    try {
+      await request(app)
+        .post('/api/auth/resend-verification')
+        .send({ email: actor.email })
+        .expect(503);
+    } finally {
+      failure.mockRestore();
+    }
+    expect(await OneTimeToken.countDocuments({ userId: actor.user._id, kind: 'verify' })).toBe(1);
+    await request(app).post('/api/auth/verify-email').send({ token: actor.token }).expect(200);
+  });
+  it('applies the verification delivery quota without invalidating an earlier valid link', async () => {
+    const actor = await register('VerifyQuota');
+    const consume = vi.spyOn(rt.coordinator, 'consume');
+    const before = mails.length;
+    try {
+      consume.mockImplementation(async (key) => !key.startsWith('email:verify:'));
+      await request(app)
+        .post('/api/auth/resend-verification')
+        .send({ email: actor.email })
+        .expect(202);
+      expect(mails).toHaveLength(before);
+    } finally {
+      consume.mockRestore();
+    }
+    await request(app).post('/api/auth/verify-email').send({ token: actor.token }).expect(200);
+  });
+  it('serializes verification against a resend that is still delivering', async () => {
+    const actor = await register('VerifyRace');
+    let release!: () => void;
+    let started!: () => void;
+    const delivery = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const waiting = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const send = vi
+      .spyOn(rt.mail, 'send')
+      .mockImplementationOnce(async (to, subject, text, _purpose, html) => {
+        mails.push({ to, subject, text, html });
+        started();
+        await delivery;
+      });
+    const resend = request(app)
+      .post('/api/auth/resend-verification')
+      .send({ email: actor.email })
+      .then((result) => result);
+    try {
+      await waiting;
+      await request(app).post('/api/auth/verify-email').send({ token: actor.token }).expect(409);
+    } finally {
+      release();
+      send.mockRestore();
+    }
+    expect((await resend).status).toBe(202);
+    await request(app).post('/api/auth/verify-email').send({ token: actor.token }).expect(400);
+    const replacement = mails
+      .findLast((mail) => mail.to === actor.email)!
+      .text.match(/#token=([^\s]+)/)![1];
+    await request(app).post('/api/auth/verify-email').send({ token: replacement }).expect(200);
+  });
+});
+
+describe('complete authentication integration', () => {
+  it('normalizes email and handles concurrent duplicate registration without changing the account', async () => {
+    const email = 'auth-duplicate@example.test';
+    const results = await Promise.all(
+      [email, '  AUTH-DUPLICATE@example.test  '].map((value) =>
+        request(app)
+          .post('/api/auth/register')
+          .send({ name: 'Original', email: value, password: 'correct horse battery staple' }),
+      ),
+    );
+    expect(results.map((result) => result.status)).toEqual([202, 202]);
+    expect(results[0]!.body).toEqual(results[1]!.body);
+    expect(await User.countDocuments({ email })).toBe(1);
+    const user = await User.findOne({ email });
+    expect(user!.passwordHash).toMatch(/^\$argon2id\$/);
+    expect(mails.filter((mail) => mail.to === email)).toHaveLength(1);
+    await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Replacement', email, password: 'a different password altogether' })
+      .expect(202);
+    expect((await User.findOne({ email }))!.name).toBe('Original');
+  });
+  it('returns the same credential error for incorrect passwords and unknown accounts', async () => {
+    const actor = await signup('AuthWrong');
+    const known = await request(app)
+      .post('/api/auth/login')
+      .send({ email: actor.email, password: 'incorrect password' })
+      .expect(401);
+    const unknown = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'unknown-auth@example.test', password: 'incorrect password' })
+      .expect(401);
+    expect(known.body.error).toEqual(unknown.body.error);
+    expect(known.headers['set-cookie']).toBeUndefined();
+  });
+  it('requires CSRF for logout and invalidates access and refresh credentials', async () => {
+    const actor = await signup('AuthLogout');
+    await request(app).post('/api/auth/logout').set('Cookie', actor.cookies).send({}).expect(403);
+    await request(app).get('/api/auth/me').set(auth(actor)).expect(200);
+    const logout = await request(app)
+      .post('/api/auth/logout')
+      .set('Cookie', actor.cookies)
+      .set('X-CSRF-Token', actor.csrf)
+      .send({})
+      .expect(204);
+    expect(
+      (logout.headers['set-cookie'] as unknown as string[]).every((cookie) =>
+        cookie.includes('Expires=Thu, 01 Jan 1970'),
+      ),
+    ).toBe(true);
+    await request(app).get('/api/auth/me').set(auth(actor)).expect(401);
+    await request(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', actor.cookies)
+      .set('X-CSRF-Token', actor.csrf)
+      .expect(401);
+    await request(app).get('/api/workspaces').expect(401);
+  });
+  it('rejects expired verification/reset links and invalid reset tokens without changing a password', async () => {
+    const actor = await signup('AuthExpiredLinks');
+    for (const kind of ['verify', 'reset'] as const) {
+      const token = `expired-${kind}-${randomUUID()}`;
+      await OneTimeToken.create({
+        userId: actor.id,
+        kind,
+        hash: hash(token),
+        expiresAt: new Date(Date.now() - 1000),
+      });
+      await request(app)
+        .post(`/api/auth/${kind === 'verify' ? 'verify-email' : 'reset-password'}`)
+        .send({
+          token,
+          ...(kind === 'reset' ? { password: 'a changed password with length' } : {}),
+        })
+        .expect(400);
+    }
+    await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token: 'invalid-token', password: 'a changed password with length' })
+      .expect(400);
+    await request(app).get('/api/auth/me').set(auth(actor)).expect(200);
+  });
+  it('rejects JWT expiry and absolute session expiry even before TTL cleanup', async () => {
+    const actor = await signup('AuthAbsoluteExpiry');
+    const session = await Session.findOne({ userId: actor.id });
+    const expired = await new SignJWT({ sid: session!._id })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject(actor.id)
+      .setIssuer(config.JWT_ISSUER)
+      .setAudience(config.JWT_AUDIENCE)
+      .setExpirationTime(Math.floor(Date.now() / 1000) - 10)
+      .sign(new TextEncoder().encode(config.JWT_SECRET));
+    const rejected = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${expired}`)
+      .expect(401);
+    expect(rejected.body.error.code).toBe('SESSION_EXPIRED');
+    await Session.updateOne(
+      { _id: session!._id },
+      { $set: { expiresAt: new Date(Date.now() - 1000) } },
+    );
+    await request(app).get('/api/auth/me').set(auth(actor)).expect(401);
+    await request(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', actor.cookies)
+      .set('X-CSRF-Token', actor.csrf)
+      .expect(401);
+  });
+  it('updates only permitted profile fields and isolates session revocation', async () => {
+    const actor = await signup('AuthProfile');
+    await request(app)
+      .patch('/api/auth/me')
+      .set(auth(actor))
+      .send({ name: 'New name', verified: true })
+      .expect(400);
+    const result = await request(app)
+      .patch('/api/auth/me')
+      .set(auth(actor))
+      .send({ name: '  New name  ' })
+      .expect(200);
+    expect(result.body.user.name).toBe('New name');
+    const sessions = await request(app).get('/api/auth/sessions').set(auth(actor)).expect(200);
+    expect(sessions.body.sessions).toHaveLength(1);
+    expect(sessions.body.currentSessionId).toBe(sessions.body.sessions[0]._id);
+    expect(JSON.stringify(sessions.body)).not.toMatch(/refreshHash|csrfHash|csrfCipher/);
+    await request(app)
+      .delete(`/api/auth/sessions/${sessions.body.currentSessionId}`)
+      .set(auth(outsider))
+      .expect(204);
+    await request(app).get('/api/auth/me').set(auth(actor)).expect(200);
+    await request(app)
+      .delete(`/api/auth/sessions/${sessions.body.currentSessionId}`)
+      .set(auth(actor))
+      .expect(204);
+    await request(app).get('/api/auth/me').set(auth(actor)).expect(401);
+  });
+  it('reauthenticates password changes and revokes all existing sessions', async () => {
+    const actor = await signup('AuthChange');
+    await request(app)
+      .post('/api/auth/change-password')
+      .set(auth(actor))
+      .send({ currentPassword: 'wrong', password: 'new correct horse battery staple' })
+      .expect(401);
+    await request(app).get('/api/auth/me').set(auth(actor)).expect(200);
+    await request(app)
+      .post('/api/auth/change-password')
+      .set(auth(actor))
+      .send({
+        currentPassword: 'correct horse battery staple',
+        password: 'new correct horse battery staple',
+      })
+      .expect(200);
+    await request(app).get('/api/auth/me').set(auth(actor)).expect(401);
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: actor.email, password: 'correct horse battery staple' })
+      .expect(401);
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: actor.email, password: 'new correct horse battery staple' })
+      .expect(200);
+  });
+  it('fails closed when login quota is exhausted and limits reset email sends', async () => {
+    const actor = await signup('AuthQuota');
+    const consume = vi.spyOn(rt.coordinator, 'consume');
+    try {
+      consume.mockImplementation(async (key) => !key.startsWith('login:'));
+      await request(app)
+        .post('/api/auth/login')
+        .send({ email: actor.email, password: 'correct horse battery staple' })
+        .expect(429);
+      const before = mails.length;
+      consume.mockImplementation(async (key) => !key.startsWith('email:reset:'));
+      await request(app).post('/api/auth/forgot-password').send({ email: actor.email }).expect(202);
+      expect(mails).toHaveLength(before);
+    } finally {
+      consume.mockRestore();
+    }
+  });
+  it('reports email failure safely and removes undelivered one-time tokens', async () => {
+    const actor = await signup('AuthMailFailure');
+    const failure = vi
+      .spyOn(rt.mail, 'send')
+      .mockRejectedValueOnce(new Error('private provider failure'));
+    try {
+      const result = await request(app)
+        .post('/api/auth/forgot-password')
+        .send({ email: actor.email })
+        .expect(503);
+      expect(result.body.error.code).toBe('MAIL_UNAVAILABLE');
+      expect(JSON.stringify(result.body)).not.toContain('private provider failure');
+      expect(await OneTimeToken.countDocuments({ userId: actor.id, kind: 'reset' })).toBe(0);
+    } finally {
+      failure.mockRestore();
+    }
+  });
+  it('sets HttpOnly, SameSite and production Secure cookies without using browser storage', async () => {
+    const production = createApp({ ...rt, config: { ...config, NODE_ENV: 'production' } });
+    const result = await request(production)
+      .post('/api/auth/login')
+      .send({ email: alice.email, password: 'correct horse battery staple' })
+      .expect(200);
+    for (const cookie of result.headers['set-cookie'] as unknown as string[]) {
+      expect(cookie).toContain('HttpOnly');
+      expect(cookie).toContain('Secure');
+      expect(cookie).toContain('SameSite=Lax');
+    }
+    expect(result.headers['cache-control']).toBe('no-store');
+  });
 });
 
 describe('identity and workspace boundaries', () => {

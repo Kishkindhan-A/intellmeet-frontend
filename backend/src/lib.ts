@@ -47,8 +47,10 @@ export function decrypt(value: string, key: string) {
 export const uuid = z.uuid();
 export const text = (max: number) => z.string().trim().min(1).max(max);
 export const email = z
-  .email()
+  .string()
+  .trim()
   .max(254)
+  .pipe(z.email())
   .transform((v) => v.toLowerCase());
 export const password = z.string().min(12).max(128);
 export const pagination = z.object({

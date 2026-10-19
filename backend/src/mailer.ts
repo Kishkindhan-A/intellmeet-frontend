@@ -1,54 +1,61 @@
 import nodemailer from 'nodemailer';
 import type { Config } from './config.js';
 import type { Mailer } from './ports.js';
-import { assert } from './lib.js';
+import { assert, HttpError } from './lib.js';
 
 export function createMailer(config: Config): Mailer & { close(): void } {
-  const local = config.SMTP_URL ? nodemailer.createTransport(config.SMTP_URL) : null;
-  const verification =
-    config.RESEND_VERIFICATION_API_KEY && config.RESEND_TEST_RECIPIENT
-      ? nodemailer.createTransport({
-          host: 'smtp.resend.com',
-          port: 465,
-          secure: true,
-          auth: { user: 'resend', pass: config.RESEND_VERIFICATION_API_KEY },
-          connectionTimeout: 10000,
-          socketTimeout: 20000,
-        })
-      : null;
+  const smtp = config.SMTP_URL
+    ? nodemailer.createTransport({
+        url: config.SMTP_URL,
+        connectionTimeout: 10000,
+        greetingTimeout: 5000,
+        socketTimeout: 10000,
+        dnsTimeout: 5000,
+        requireTLS: config.NODE_ENV === 'production',
+        ignoreTLS: false,
+        tls: { rejectUnauthorized: true },
+        logger: false,
+        debug: false,
+        disableFileAccess: true,
+        disableUrlAccess: true,
+      })
+    : null;
   return {
     close() {
-      local?.close();
-      verification?.close();
+      smtp?.close();
     },
-    async send(to, subject, text, purpose) {
-      // Resend's domain-free sender permits only the account owner's address.
-      // Never redirect another user's verification token to that owner.
-      if (
-        verification &&
-        purpose === 'verification' &&
-        to.toLowerCase() === config.RESEND_TEST_RECIPIENT!.toLowerCase()
-      ) {
-        try {
-          await verification.sendMail({
-            from: 'IntellMeet <onboarding@resend.dev>',
-            to,
-            subject,
-            text,
-          });
-        } catch {
-          // Provider errors may contain credential or message details.
-          assert(
-            false,
-            503,
-            'MAIL_UNAVAILABLE',
-            'Verification email could not be delivered. Check the email service configuration.',
-          );
-        }
-        return;
+    async send(to, subject, text, _purpose, html) {
+      assert(
+        smtp,
+        503,
+        'MAIL_UNAVAILABLE',
+        'Email delivery is not configured. Contact support or try again later.',
+      );
+      try {
+        const result = await smtp.sendMail({
+          from: config.EMAIL_FROM,
+          to,
+          subject,
+          text,
+          ...(html ? { html } : {}),
+        });
+        const accepted = result.accepted?.some(
+          (address) => address.toLowerCase() === to.toLowerCase(),
+        );
+        assert(
+          accepted && !result.rejected?.length,
+          503,
+          'MAIL_UNAVAILABLE',
+          'Email could not be delivered. Try again later.',
+        );
+      } catch {
+        // Provider errors may include credentials or content. Never expose or log them.
+        throw new HttpError(
+          503,
+          'MAIL_UNAVAILABLE',
+          'Email could not be delivered. Try again later.',
+        );
       }
-      assert(local, 503, 'MAIL_UNAVAILABLE', 'Email delivery is not configured');
-      await local.sendMail({ from: config.EMAIL_FROM, to, subject, text });
     },
   };
 }

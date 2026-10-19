@@ -11,6 +11,7 @@ const object = (properties: Record<string, JsonSchema>, required: string[] = [])
   required,
 });
 const routes: Array<[string, string, string, JsonSchema?, boolean?]> = [
+  ['get', '/api/auth/config', 'Public authentication policy', undefined, true],
   ['get', '/help', 'Public help articles', undefined, true],
   ['get', '/api/account/preferences', 'Read cookie, locale and time-zone preferences'],
   [
@@ -53,7 +54,7 @@ const routes: Array<[string, string, string, JsonSchema?, boolean?]> = [
   [
     'post',
     '/api/auth/register',
-    'Register and email verification link',
+    'Register and send email verification OTP',
     object(
       {
         email: { type: 'string', format: 'email' },
@@ -88,6 +89,19 @@ const routes: Array<[string, string, string, JsonSchema?, boolean?]> = [
         boolean?,
       ],
   ),
+  [
+    'post',
+    '/api/auth/verify-email-otp',
+    'Verify email using a six-digit OTP',
+    object(
+      {
+        email: { type: 'string', format: 'email' },
+        code: { type: 'string', pattern: '^[0-9]{6}$' },
+      },
+      ['email', 'code'],
+    ),
+    true,
+  ],
   ['get', '/api/auth/google', 'Start Google OAuth', undefined, true],
   ['get', '/api/auth/google/callback', 'Google OAuth callback', undefined, true],
   ['post', '/api/auth/logout', 'Revoke current session'],

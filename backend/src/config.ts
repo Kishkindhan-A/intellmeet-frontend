@@ -17,6 +17,10 @@ export const configSchema = z.object({
   JWT_AUDIENCE: z.string().default('intellmeet-api'),
   ACCESS_TOKEN_SECONDS: z.coerce.number().int().min(60).max(900).default(600),
   SESSION_DAYS: z.coerce.number().int().min(1).max(30).default(7),
+  REQUIRE_EMAIL_VERIFICATION: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
   MAINTENANCE_MODE: z
     .enum(['true', 'false'])
@@ -46,8 +50,6 @@ export const configSchema = z.object({
   ),
   METRICS_TOKEN: optional,
   SMTP_URL: optional,
-  RESEND_VERIFICATION_API_KEY: optional,
-  RESEND_TEST_RECIPIENT: z.preprocess((v) => (v === '' ? undefined : v), z.email().optional()),
   EMAIL_FROM: z.string().default('IntellMeet <no-reply@localhost>'),
   OPENAI_API_KEY: optional,
   OPENAI_SUMMARY_MODEL: z.string().default('gpt-4.1-mini'),
@@ -93,6 +95,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
   )
     throw new Error('Security contact expiry must be in the next year');
   if (config.NODE_ENV === 'production') {
+    if (!config.REQUIRE_EMAIL_VERIFICATION)
+      throw new Error('Production requires REQUIRE_EMAIL_VERIFICATION=true');
     if (!config.APP_URL.startsWith('https://') || !config.API_URL.startsWith('https://'))
       throw new Error('Production requires HTTPS URLs');
     if (!config.METRICS_TOKEN || config.METRICS_TOKEN.length < 32)

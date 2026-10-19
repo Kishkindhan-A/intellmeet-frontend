@@ -28,7 +28,10 @@
     "local:start": "npm run build && node scripts/local-runtime.mjs",
     "local:stop": "node scripts/local-runtime.mjs --stop",
     "test:browser": "node scripts/browser-audit.mjs",
+    "test:auth-smoke": "node scripts/auth-smoke.mjs",
     "local:services": "npm run build && node scripts/local-runtime.mjs --services",
+    "local:live-email": "npm run build && node scripts/local-runtime.mjs --services --live-email",
+    "local:await-email": "npm run build && node scripts/local-runtime.mjs --services --email-disabled",
     "test:local-services": "node scripts/local-services-check.mjs"
   },
   "dependencies": {

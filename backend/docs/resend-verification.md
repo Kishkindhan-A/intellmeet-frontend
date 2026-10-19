@@ -1,14 +1,7 @@
-# Resend verification-only testing
+# Retired personal-recipient test route
 
-Without a verified domain, Resend permits `onboarding@resend.dev` to send to the email address associated with the Resend account. This setup uses SMTP over TLS on port 465. See https://resend.com/docs/send-with-smtp and https://resend.com/docs/knowledge-base/403-error-resend-dev-domain.
+The former account-owner-only Resend route was removed on 19 October 2026. All users now receive their own verification message through the configured `SMTP_URL` sender. No recipient is redirected to the account owner, and sender choice no longer depends on the recipient address.
 
-For the local service runner, populate the ignored `backend/.env.resend.local`:
+`RESEND_TEST_RECIPIENT`, `RESEND_VERIFICATION_API_KEY` and `.env.resend.local` are no longer read. Existing ignored files were retained and are unused. Do not follow the previous setup instructions for these settings.
 
-```dotenv
-RESEND_TEST_RECIPIENT=your-resend-account-email
-RESEND_VERIFICATION_API_KEY=your-sending-key
-```
-
-Restart local services after saving. Only account-verification messages addressed to that exact recipient use Resend. Other recipients and other email types remain in Mailpit. Another user's token is never redirected to the account owner. Resend failures return a generic delivery error without silently falling back. Tests mock email delivery and send no external messages.
-
-The frontend URL in verification emails remains localhost, so open those links on the machine running IntellMeet. For general user delivery, the company must configure a verified sending domain and its production email service.
+Use [EMAIL_VERIFICATION.md](EMAIL_VERIFICATION.md) for current SMTP configuration and testing. A Resend account can still be used as a standard SMTP sender with an appropriately verified sending domain and credentials supplied by the company; it is not a special personal-email route.

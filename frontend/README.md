@@ -1,21 +1,86 @@
-# IntellMeet frontend
+# IntellMeet Frontend
 
-React, TypeScript, Vite, LiveKit, and Socket.IO client application. Uses the existing backend APIs with HttpOnly cookies, memory-only access/CSRF tokens, and serialized refresh using Web Locks.
+This is the React + TypeScript frontend for IntellMeet. It provides the user-facing app for authentication, workspace management, meeting flows, notifications, and collaborative meeting utilities.
 
-## Run locally
+## Stack
 
-From `backend/`, run `npm run local:services`. From `frontend/`, run `npm ci` and `npm run dev`. Open http://localhost:5173. The development proxy forwards `/api` and `/socket.io` to port 4000. New accounts must verify email through the local Mailpit inbox at http://localhost:8026 before signing in.
+- React 19
+- TypeScript
+- Vite
+- LiveKit client
+- Socket.IO client
+- Oxlint for linting
 
-`npm run build` checks TypeScript and builds static assets. `npm run lint` runs Oxlint. `npm audit --audit-level=high` checks known dependency vulnerabilities.
+## Prerequisites
 
-The UI includes registration, verification, sign-in and password reset, workspace creation and switching, dashboard counts from stored data, meeting scheduling and host start/end, explicit participant consent, waiting-room admission, camera/microphone/screen-sharing controls, persistent chat, versioned shared notes, meeting recap/transcript/asset views, action-item creation and status updates, team invitations, MFA enrollment, workspace settings, notifications, and support submission.
+- Node.js 24+
+- A running backend instance
+- Access to the app API and socket server
 
-## Configuration and limits
+## Local development
 
-Only browser-safe public URLs may go in `.env`. Set `VITE_API_URL` and `VITE_SOCKET_URL` for a production API, or reverse-proxy them on the application origin. Never place OpenAI, LiveKit, storage, email, MongoDB, or Redis secrets in the frontend. Company deployment must serve HTTPS, support SPA fallback for email/OAuth paths, proxy WebSockets, and configure backend `APP_URL`, `API_URL`, and CORS for the actual origins.
+From the repository root:
 
-The local backend uses an isolated local database. Team MongoDB configuration remains saved in `backend/.env`. OpenAI/Google OAuth and recording egress are not configured in the local services. AI is never simulated. A recap remains empty until actual processing produces stored output. The media bundle loads only when a meeting is opened.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-Current lists show up to 100 meetings/tasks and 30 recent messages. There is no automatic microphone capture/transcription loop, recording control, advanced moderation, project editor, or full administration console in this first frontend. Do not treat it as an independently audited production release. Check actual browser audio/video/screen-share exchange, production provider integrations, accessibility, tenant isolation, and cross-tab refresh behavior before launch.
+Then open:
 
-The local frontend verification account and workspace are synthetic test data, retained under the user's instruction to keep local tests until they request removal. Never reuse the test account for real work.
+- http://127.0.0.1:5173
+
+The Vite dev server proxies:
+
+- /api -> http://127.0.0.1:4000
+- /socket.io -> http://127.0.0.1:4000 (WebSocket)
+
+If you want to run the full local stack, start the backend services first:
+
+```bash
+cd backend
+npm install
+npm run local:services
+```
+
+## Environment variables
+
+The frontend reads its API base from the `VITE_API_URL` environment variable. If it is not set, it defaults to `/api`.
+
+Example:
+
+```bash
+VITE_API_URL=http://127.0.0.1:4000/api
+```
+
+Do not store secrets or private credentials in the frontend. Only browser-safe public values should be exposed here.
+
+## Scripts
+
+```bash
+npm run dev      # start Vite dev server
+npm run build    # type-check and build production assets
+npm run lint     # run Oxlint
+npm run preview  # preview the production build locally
+npm audit --audit-level=high
+```
+
+## What this frontend includes
+
+- sign up, sign in, password reset, and email verification
+- secure session handling with refresh and CSRF support
+- workspace creation and switching
+- meeting scheduling and room lifecycle
+- waiting-room and participant consent flows
+- video, audio, and screen-sharing controls
+- shared notes and meeting chat
+- action items and recap views
+- notifications and support submission
+
+## Notes
+
+This app is designed to work against the backend API and real meeting infrastructure. For local development, the backend should be running and configured correctly before opening the frontend.
+
+For production deployments, serve the app over HTTPS and ensure your reverse proxy or hosting platform forwards API and WebSocket traffic correctly.
+

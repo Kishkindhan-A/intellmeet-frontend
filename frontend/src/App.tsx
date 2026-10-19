@@ -25,15 +25,26 @@ import { api, restoreSession, clearSession, ApiError } from './api';
 import type { User } from './api';
 import type { Workspace, Meeting, Task, Member } from './types';
 import { Auth } from './Auth';
-import { Landing } from './Landing';
+import { StudioLanding } from './StudioLanding';
 const MeetingRoom = lazy(() => import('./MeetingRoom').then((m) => ({ default: m.MeetingRoom })));
 import { SettingsPage, HelpPage, Notifications } from './Pages';
 import { Modal, Empty, Loading, ErrorBox, Submit, dateLabel } from './ui';
 import './App.css';
 import './Signature.css';
+import './WorkspacePolish.css';
 import { SignalMark, MeetingSpotlight } from './Brand';
 import { WorkspaceSearch, GettingStarted, WeekAgenda } from './WorkspaceExperience';
 import { useSearchShortcut } from './useSearchShortcut';
+import { navigate, usePathname } from './navigation';
+
+const authPaths = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/auth/callback',
+];
 type Page = 'overview' | 'meetings' | 'tasks' | 'team' | 'settings' | 'help' | 'notifications';
 const nav = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -42,17 +53,58 @@ const nav = [
   { id: 'team', label: 'Your team', icon: Users },
 ] as const;
 export default function App() {
+  const path = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [boot, setBoot] = useState(true);
   const [error, setError] = useState('');
+  const signedInId = user?.id;
+  useEffect(() => {
+    if (!boot && !user && path !== '/' && path !== '/invite' && !authPaths.includes(path)) {
+      navigate(['/profile', '/settings'].includes(path) ? '/login?next=profile' : '/login', true);
+    }
+  }, [boot, user, path]);
+  useEffect(() => {
+    if (!signedInId) return;
+    let active = true;
+    let checking = false;
+    const check = async () => {
+      if (!active || checking || document.visibilityState !== 'visible') return;
+      checking = true;
+      try {
+        const result = await api<{ user: User }>('/auth/me');
+        if (active) setUser((current) => (current?.id === result.user.id ? result.user : current));
+      } catch {
+        // The API clears expired sessions. Temporary network failures do not sign users out.
+      } finally {
+        checking = false;
+      }
+    };
+    window.addEventListener('focus', check);
+    document.addEventListener('visibilitychange', check);
+    const timer = window.setInterval(check, 60000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', check);
+      document.removeEventListener('visibilitychange', check);
+    };
+  }, [signedInId]);
   useEffect(() => {
     let active = true;
-    const ended = () => setUser(null);
+    let endedSession = false;
+    const ended = (event: Event) => {
+      endedSession = true;
+      setUser(null);
+      setError('');
+      const expired = (event as CustomEvent<{ reason?: string }>).detail?.reason === 'expired';
+      if (expired || !authPaths.includes(location.pathname))
+        navigate(expired ? '/login?notice=session-expired' : '/login', true);
+    };
     window.addEventListener('session-ended', ended);
     restoreSession()
       .then(() => api<{ user: User }>('/auth/me'))
       .then((r) => {
-        if (active) setUser(r.user);
+        if (active && !endedSession) setUser(r.user);
       })
       .catch((e) => {
         if (active && !(e instanceof ApiError && e.status === 401))
@@ -66,19 +118,34 @@ export default function App() {
       window.removeEventListener('session-ended', ended);
     };
   }, []);
-  if (!user && location.pathname === '/') return <Landing />;
+  if (!user && path === '/') return <StudioLanding />;
   if (boot) return <Loading />;
-  if (!user)
+  if (!user || authPaths.includes(path))
     return (
       <>
         {error && <div className="connection-banner">{error}</div>}
-        <Auth ready={setUser} />
+        <Auth
+          key={path + location.search}
+          ready={(nextUser) => {
+            setError('');
+            setUser(nextUser);
+            if (location.pathname !== '/invite')
+              navigate(
+                new URLSearchParams(location.search).get('next') === 'profile'
+                  ? '/profile'
+                  : '/workspace',
+                true,
+              );
+          }}
+        />
       </>
     );
-  return <WorkspaceApp user={user} />;
+  return <WorkspaceApp user={user} onUserChange={setUser} />;
 }
-function WorkspaceApp({ user }: { user: User }) {
-  const [page, setPage] = useState<Page>('overview');
+function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user: User) => void }) {
+  const [page, setPage] = useState<Page>(() =>
+    ['/profile', '/settings'].includes(location.pathname) ? 'settings' : 'overview',
+  );
   const [today] = useState(() => new Date());
   const [defaultStart] = useState(() =>
     new Date(Date.now() + 3600000 - new Date().getTimezoneOffset() * 60000)
@@ -469,7 +536,14 @@ function WorkspaceApp({ user }: { user: User }) {
               </button>
             )}
           </div>
-          {loading ? (
+          {page === 'settings' ? (
+            <SettingsPage
+              user={user}
+              workspace={workspace}
+              onUserChange={onUserChange}
+              update={() => void loadWorkspaces()}
+            />
+          ) : loading ? (
             <Loading />
           ) : !workspaceId ? (
             <Empty
@@ -746,13 +820,6 @@ function WorkspaceApp({ user }: { user: User }) {
                     ))}
                   </div>
                 </section>
-              )}
-              {page === 'settings' && (
-                <SettingsPage
-                  user={user}
-                  workspace={workspace!}
-                  update={() => void loadWorkspaces()}
-                />
               )}
               {page === 'help' && <HelpPage workspaceId={workspaceId} />}
               {page === 'notifications' && <Notifications />}

@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   mfaEnabled: boolean;
+  verified: boolean;
 }
 export class ApiError extends Error {
   status: number;
@@ -16,12 +17,21 @@ export class ApiError extends Error {
 let accessToken = '';
 let csrfToken = '';
 let pending: Promise<void> | null = null;
+const sessionChannel =
+  typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('intellmeet-session');
+sessionChannel?.addEventListener('message', (event) => {
+  if (event.data === 'signed-out') endSession(false);
+});
 const base = import.meta.env.VITE_API_URL || '/api';
 export const getAccessToken = () => accessToken;
-export function clearSession() {
+function endSession(broadcast: boolean, reason: 'signed-out' | 'expired' = 'signed-out') {
   accessToken = '';
   csrfToken = '';
-  window.dispatchEvent(new Event('session-ended'));
+  window.dispatchEvent(new CustomEvent('session-ended', { detail: { reason } }));
+  if (broadcast) sessionChannel?.postMessage('signed-out');
+}
+export function clearSession(reason: 'signed-out' | 'expired' = 'signed-out') {
+  endSession(true, reason);
 }
 export function setSession(s: { accessToken: string; csrfToken: string }) {
   accessToken = s.accessToken;
@@ -65,19 +75,56 @@ export async function restoreSession() {
   return pending;
 }
 export async function api<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  try {
-    return await raw<T>(path, method, body);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 401 && !path.startsWith('/auth/')) {
-      try {
-        await restoreSession();
-      } catch (f) {
-        if (f instanceof ApiError && f.status === 401) clearSession();
-        throw f;
+  let retriedCsrf = false;
+  let retriedSession = false;
+  for (;;) {
+    try {
+      return await raw<T>(path, method, body);
+    } catch (error) {
+      if (
+        error instanceof ApiError &&
+        error.status === 403 &&
+        error.code === 'CSRF_INVALID' &&
+        method !== 'GET' &&
+        !retriedCsrf
+      ) {
+        // A CSRF denial happens before the write; a second tab may have rotated the cookie.
+        retriedCsrf = true;
+        try {
+          csrfToken = (await raw<{ csrfToken: string }>('/auth/csrf')).csrfToken;
+        } catch (csrfError) {
+          if (csrfError instanceof ApiError && csrfError.status === 401) clearSession('expired');
+          throw csrfError;
+        }
+        continue;
       }
-      return raw<T>(path, method, body);
+      const protectedRequest =
+        !path.startsWith('/auth/') ||
+        path === '/auth/me' ||
+        path === '/auth/logout' ||
+        path === '/auth/sessions' ||
+        path.startsWith('/auth/sessions/');
+      if (
+        error instanceof ApiError &&
+        error.status === 401 &&
+        (protectedRequest || error.code === 'SESSION_EXPIRED')
+      ) {
+        if (retriedSession) {
+          clearSession('expired');
+          throw error;
+        }
+        retriedSession = true;
+        try {
+          await restoreSession();
+        } catch (refreshError) {
+          if (refreshError instanceof ApiError && refreshError.status === 401)
+            clearSession('expired');
+          throw refreshError;
+        }
+        continue;
+      }
+      throw error;
     }
-    throw e;
   }
 }
 export async function login(email: string, password: string, code: string) {

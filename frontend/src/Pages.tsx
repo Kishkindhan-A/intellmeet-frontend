@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Bell, HelpCircle } from 'lucide-react';
-import { api } from './api';
+import { api, clearSession } from './api';
+import { navigate } from './navigation';
 import type { User } from './api';
 import type { Workspace } from './types';
 import { ErrorBox, Submit, Empty, dateLabel } from './ui';
@@ -9,10 +10,12 @@ export function SettingsPage({
   user,
   workspace,
   update,
+  onUserChange,
 }: {
   user: User;
-  workspace: Workspace;
+  workspace?: Workspace;
   update: () => void;
+  onUserChange: (user: User) => void;
 }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -23,9 +26,10 @@ export function SettingsPage({
     e.preventDefault();
     setBusy(true);
     setError('');
+    setNotice('');
     try {
       const d = Object.fromEntries(new FormData(e.currentTarget));
-      await api(
+      const result = await api<{ user?: User }>(
         path,
         'PATCH',
         path === '/auth/me'
@@ -36,6 +40,7 @@ export function SettingsPage({
               aiEnabled: d.aiEnabled === 'on',
             },
       );
+      if (result.user) onUserChange(result.user);
       setNotice('Settings saved.');
       update();
     } catch (e) {
@@ -47,7 +52,11 @@ export function SettingsPage({
   return (
     <>
       <ErrorBox message={error} />
-      {notice && <div className="success">{notice}</div>}
+      {notice && (
+        <div className="success" role="status">
+          {notice}
+        </div>
+      )}
       <div className="settings-grid">
         <section className="panel settings-panel">
           <h2>Your profile</h2>
@@ -63,38 +72,40 @@ export function SettingsPage({
             <Submit busy={busy}>Save profile</Submit>
           </form>
         </section>
-        <section className="panel settings-panel">
-          <h2>Workspace preferences</h2>
-          {workspace.role === 'member' ? (
-            <p>Workspace administrators manage these preferences.</p>
-          ) : (
-            <form onSubmit={(e) => void submit(e, `/workspaces/${workspace._id}`)}>
-              <label>
-                Name
-                <input name="name" defaultValue={workspace.name} required maxLength={100} />
-              </label>
-              <label>
-                Retention in days
-                <input
-                  name="retentionDays"
-                  type="number"
-                  min={1}
-                  max={3650}
-                  defaultValue={workspace.retentionDays}
-                />
-              </label>
-              <label className="check-label">
-                <input name="aiEnabled" type="checkbox" defaultChecked={workspace.aiEnabled} />
-                Allow AI processing with participant consent
-              </label>
-              <Submit busy={busy}>Save workspace</Submit>
-            </form>
-          )}
-        </section>
+        {workspace && (
+          <section className="panel settings-panel">
+            <h2>Workspace preferences</h2>
+            {workspace.role === 'member' ? (
+              <p>Workspace administrators manage these preferences.</p>
+            ) : (
+              <form onSubmit={(e) => void submit(e, `/workspaces/${workspace._id}`)}>
+                <label>
+                  Name
+                  <input name="name" defaultValue={workspace.name} required maxLength={100} />
+                </label>
+                <label>
+                  Retention in days
+                  <input
+                    name="retentionDays"
+                    type="number"
+                    min={1}
+                    max={3650}
+                    defaultValue={workspace.retentionDays}
+                  />
+                </label>
+                <label className="check-label">
+                  <input name="aiEnabled" type="checkbox" defaultChecked={workspace.aiEnabled} />
+                  Allow AI processing with participant consent
+                </label>
+                <Submit busy={busy}>Save workspace</Submit>
+              </form>
+            )}
+          </section>
+        )}
         <section className="panel settings-panel">
           <h2>Two-factor authentication</h2>
           <p>Use an authenticator app. Recovery codes are shown once; save them privately.</p>
-          {user.mfaEnabled ? (
+          {user.mfaEnabled && !codes.length ? (
             <span className="badge live">MFA enabled</span>
           ) : (
             <form
@@ -121,6 +132,7 @@ export function SettingsPage({
                       ).recoveryCodes,
                     );
                     setSecret('');
+                    onUserChange({ ...user, mfaEnabled: true });
                   }
                 } catch (e) {
                   setError(e instanceof Error ? e.message : 'Unable to configure MFA');
@@ -164,7 +176,173 @@ export function SettingsPage({
             </form>
           )}
         </section>
+        <AccountSecurity />
       </div>
+    </>
+  );
+}
+type AccountSession = { _id: string; createdAt: string; expiresAt: string; userAgent?: string };
+function AccountSecurity() {
+  const [sessions, setSessions] = useState<AccountSession[]>([]);
+  const [currentId, setCurrentId] = useState('');
+  const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  async function loadSessions() {
+    const data = await api<{ sessions: AccountSession[]; currentSessionId: string }>(
+      '/auth/sessions',
+    );
+    setSessions(data.sessions);
+    setCurrentId(data.currentSessionId);
+  }
+  useEffect(() => {
+    let active = true;
+    api<{ sessions: AccountSession[]; currentSessionId: string }>('/auth/sessions')
+      .then((data) => {
+        if (active) {
+          setSessions(data.sessions);
+          setCurrentId(data.currentSessionId);
+        }
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  return (
+    <>
+      <section className="panel settings-panel">
+        <h2>Change password</h2>
+        <ErrorBox message={passwordError} />
+        <p>
+          Changing your password signs out all sessions. MFA accounts must also confirm an
+          authentication or recovery code.
+        </p>
+        <form
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (busy) return;
+            const data = new FormData(event.currentTarget);
+            setPasswordError('');
+            setNotice('');
+            if (data.get('password') !== data.get('confirmPassword')) {
+              setPasswordError('New passwords do not match.');
+              return;
+            }
+            setBusy(true);
+            try {
+              await api('/auth/change-password', 'POST', {
+                currentPassword: data.get('currentPassword'),
+                password: data.get('password'),
+                ...(data.get('code') ? { code: data.get('code') } : {}),
+              });
+              navigate('/login?notice=password-reset', true);
+              clearSession();
+            } catch (e) {
+              setPasswordError(e instanceof Error ? e.message : 'Unable to change password');
+            } finally {
+              setBusy(false);
+            }
+          }}
+          aria-busy={busy}
+        >
+          <label>
+            Current password
+            <input
+              name="currentPassword"
+              type="password"
+              required
+              maxLength={128}
+              autoComplete="current-password"
+              disabled={busy}
+            />
+          </label>
+          <label>
+            New password
+            <input
+              name="password"
+              type="password"
+              required
+              minLength={12}
+              maxLength={128}
+              autoComplete="new-password"
+              disabled={busy}
+            />
+          </label>
+          <label>
+            Confirm new password
+            <input
+              name="confirmPassword"
+              type="password"
+              required
+              minLength={12}
+              maxLength={128}
+              autoComplete="new-password"
+              disabled={busy}
+            />
+          </label>
+          <label>
+            Authentication or recovery code (if enabled)
+            <input name="code" autoComplete="one-time-code" maxLength={100} disabled={busy} />
+          </label>
+          <Submit busy={busy}>Update password and sign out</Submit>
+        </form>
+      </section>
+      <section className="panel settings-panel">
+        <h2>Active sessions</h2>
+        <p>Sign out a device you no longer use or recognize.</p>
+        <ErrorBox message={error} />
+        {notice && (
+          <div className="success" role="status">
+            {notice}
+          </div>
+        )}
+        {loading && <p role="status">Loading sessions…</p>}
+        {!loading && !sessions.length && <p>No active sessions to display.</p>}
+        <div className="account-sessions">
+          {sessions.map((session) => (
+            <article key={session._id}>
+              <div>
+                <strong>{session._id === currentId ? 'This device' : 'Another device'}</strong>
+                <p>{session.userAgent || 'Browser details unavailable'}</p>
+                <small>
+                  Signed in {dateLabel(session.createdAt)} · Expires {dateLabel(session.expiresAt)}
+                </small>
+              </div>
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setError('');
+                  setNotice('');
+                  try {
+                    await api(`/auth/sessions/${session._id}`, 'DELETE');
+                    if (session._id === currentId) clearSession();
+                    else {
+                      await loadSessions();
+                      setNotice('Device signed out.');
+                    }
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : 'Unable to end session');
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Sign out {session._id === currentId ? 'this device' : 'device'}
+              </button>
+            </article>
+          ))}
+        </div>
+      </section>
     </>
   );
 }

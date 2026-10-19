@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { X, LoaderCircle, ArrowRight } from 'lucide-react';
 export function Modal({
@@ -11,6 +11,7 @@ export function Modal({
   close: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const d = ref.current;
     d?.showModal();
@@ -19,13 +20,14 @@ export function Modal({
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
       onCancel={close}
       onClick={(e) => {
         if (e.target === ref.current) close();
       }}
     >
       <div className="modal-head">
-        <h2>{title}</h2>
+        <h2 id={titleId}>{title}</h2>
         <button className="icon-button" aria-label="Close dialog" onClick={close}>
           <X size={20} />
         </button>
@@ -67,9 +69,17 @@ export function ErrorBox({ message }: { message: string }) {
     </div>
   ) : null;
 }
-export function Submit({ busy, children }: { busy: boolean; children: ReactNode }) {
+export function Submit({
+  busy,
+  disabled = false,
+  children,
+}: {
+  busy: boolean;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <button className="primary" type="submit" disabled={busy}>
+    <button className="primary" type="submit" disabled={busy || disabled}>
       {busy ? <LoaderCircle size={17} className="spin" /> : null}
       {children}
       {!busy && <ArrowRight size={17} />}
