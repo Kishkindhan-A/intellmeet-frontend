@@ -32,6 +32,24 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('frontend session client', () => {
+  it('rejects an HTML fallback instead of treating it as successful API data', async () => {
+    const client = await import('../../frontend/src/api');
+    fetchMock.mockResolvedValue(new Response('<html>SPA fallback</html>', { status: 200 }));
+    await expect(client.api('/auth/config')).rejects.toMatchObject({
+      status: 502,
+      code: 'INVALID_RESPONSE',
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+  it('shows a safe service error for a crashed function without retrying a write', async () => {
+    const client = await import('../../frontend/src/api');
+    fetchMock.mockResolvedValue(new Response('FUNCTION_INVOCATION_FAILED', { status: 500 }));
+    await expect(client.api('/auth/register', 'POST', {})).rejects.toMatchObject({
+      status: 500,
+      message: 'Account services are temporarily unavailable. Please try again shortly.',
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
   it('keeps credentials in memory and sends authenticated mutations with cookies and CSRF', async () => {
     const client = await import('../../frontend/src/api');
     client.setSession({ accessToken: 'unit-access', csrfToken: 'unit-csrf' });
