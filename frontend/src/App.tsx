@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import {
   Video,
   LayoutDashboard,
@@ -118,8 +119,18 @@ export default function App() {
       window.removeEventListener('session-ended', ended);
     };
   }, []);
-  if (!user && path === '/') return <StudioLanding />;
-  if (boot) return <Loading />;
+  if (!user && path === '/') return (
+    <>
+      <StudioLanding />
+      <Analytics />
+    </>
+  );
+  if (boot) return (
+    <>
+      <Loading />
+      <Analytics />
+    </>
+  );
   if (!user || authPaths.includes(path))
     return (
       <>
@@ -138,9 +149,15 @@ export default function App() {
               );
           }}
         />
+        <Analytics />
       </>
     );
-  return <WorkspaceApp user={user} onUserChange={setUser} />;
+  return (
+    <>
+      <WorkspaceApp user={user} onUserChange={setUser} />
+      <Analytics />
+    </>
+  );
 }
 function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user: User) => void }) {
   const [page, setPage] = useState<Page>(() =>
