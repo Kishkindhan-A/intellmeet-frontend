@@ -43,6 +43,7 @@ let onTranscribe: (() => Promise<void>) | undefined;
 let recordingCalls = 0;
 const config = readConfig({
   NODE_ENV: 'test',
+  REQUIRE_EMAIL_VERIFICATION: 'true',
   JWT_SECRET: 'test-secret-'.repeat(5),
   ENCRYPTION_KEY: 'a'.repeat(64),
   LOG_LEVEL: 'silent',
@@ -274,15 +275,20 @@ describe('local login without email verification', () => {
       .set('Authorization', `Bearer ${login.body.accessToken}`)
       .expect(401);
   });
-  it('prevents accidentally disabling email verification in production configuration', () => {
-    expect(() =>
-      readConfig({
-        NODE_ENV: 'production',
-        REQUIRE_EMAIL_VERIFICATION: 'false',
-        JWT_SECRET: 'test-secret-'.repeat(5),
-        ENCRYPTION_KEY: 'a'.repeat(64),
-      }),
-    ).toThrow('Production requires REQUIRE_EMAIL_VERIFICATION=true');
+  it('allows password sign-in configuration in production without SMTP', () => {
+    const production = readConfig({
+      NODE_ENV: 'production',
+      REQUIRE_EMAIL_VERIFICATION: 'false',
+      JWT_SECRET: 'production-secret-'.repeat(4),
+      ENCRYPTION_KEY: '0123456789abcdef'.repeat(4),
+      APP_URL: 'https://meet.example.test',
+      API_URL: 'https://meet.example.test',
+      CORS_ORIGINS: 'https://meet.example.test',
+      METRICS_TOKEN: 'metrics-secret-'.repeat(4),
+      REQUIRE_ADMIN_MFA: 'true',
+    });
+    expect(production.REQUIRE_EMAIL_VERIFICATION).toBe(false);
+    expect(production.SMTP_URL).toBeUndefined();
   });
 });
 

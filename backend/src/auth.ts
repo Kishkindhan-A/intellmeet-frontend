@@ -300,9 +300,11 @@ export function authRoutes(rt: Runtime) {
         await audit(req, 'auth.register', user._id);
       }
     }
-    res
-      .status(202)
-      .json({ message: 'If registration is eligible, check your email to verify your account.' });
+    res.status(202).json({
+      message: rt.config.REQUIRE_EMAIL_VERIFICATION
+        ? 'If registration is eligible, check your email to verify your account.'
+        : 'Registration processed. Sign in with your email and password.',
+    });
   });
   router.post('/verify-email', async (req, res) => {
     const input = body(z.object({ token: text(200) }).strict(), req);

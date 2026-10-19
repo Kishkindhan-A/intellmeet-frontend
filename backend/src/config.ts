@@ -19,7 +19,7 @@ export const configSchema = z.object({
   SESSION_DAYS: z.coerce.number().int().min(1).max(30).default(7),
   REQUIRE_EMAIL_VERIFICATION: z
     .enum(['true', 'false'])
-    .default('true')
+    .default('false')
     .transform((value) => value === 'true'),
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
   MAINTENANCE_MODE: z
@@ -95,13 +95,12 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
   )
     throw new Error('Security contact expiry must be in the next year');
   if (config.NODE_ENV === 'production') {
-    if (!config.REQUIRE_EMAIL_VERIFICATION)
-      throw new Error('Production requires REQUIRE_EMAIL_VERIFICATION=true');
     if (!config.APP_URL.startsWith('https://') || !config.API_URL.startsWith('https://'))
       throw new Error('Production requires HTTPS URLs');
     if (!config.METRICS_TOKEN || config.METRICS_TOKEN.length < 32)
       throw new Error('Production requires METRICS_TOKEN with 32+ characters');
-    if (!config.SMTP_URL) throw new Error('Production requires SMTP_URL');
+    if (config.REQUIRE_EMAIL_VERIFICATION && !config.SMTP_URL)
+      throw new Error('Email verification requires SMTP_URL in production');
     if (!config.REQUIRE_ADMIN_MFA) throw new Error('Production requires REQUIRE_ADMIN_MFA=true');
     if (config.CORS_ORIGINS.split(',').some((v) => !v.trim().startsWith('https://')))
       throw new Error('Production origins must use HTTPS');

@@ -58,6 +58,7 @@ export function Auth({ ready }: { ready: (u: User) => void }) {
         if (active) {
           setVerificationRequired(settings.emailVerificationRequired);
           setPolicyLoading(false);
+          if (mode === 'verify' && !settings.emailVerificationRequired) navigate('/login');
         }
       })
       .catch(() => {
@@ -69,7 +70,7 @@ export function Auth({ ready }: { ready: (u: User) => void }) {
     return () => {
       active = false;
     };
-  }, [policyAttempt]);
+  }, [policyAttempt, mode]);
   const verificationStarted = useRef(false);
   const emailInput = useRef<HTMLInputElement>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -109,11 +110,18 @@ export function Auth({ ready }: { ready: (u: User) => void }) {
   const initialVerification = useRef(confirmEmail);
   useEffect(() => {
     // One attempt per mounted email link, including StrictMode effect replay.
-    if (mode === 'verify' && token && !verificationStarted.current) {
+    if (
+      mode === 'verify' &&
+      !policyLoading &&
+      !policyFailed &&
+      verificationRequired &&
+      token &&
+      !verificationStarted.current
+    ) {
       verificationStarted.current = true;
       void initialVerification.current();
     }
-  }, [mode, token]);
+  }, [mode, token, policyLoading, policyFailed, verificationRequired]);
   function setMode(next: AuthMode, feedback?: 'password-reset' | 'verified') {
     setError('');
     setNotice('');
