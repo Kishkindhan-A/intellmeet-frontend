@@ -1,5 +1,5 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import {
   Video,
   LayoutDashboard,
@@ -20,71 +20,47 @@ import {
   X,
   Check,
   ShieldCheck,
-} from "lucide-react";
-import { api, restoreSession, clearSession, ApiError } from "./api";
-import type { User } from "./api";
-import type { Workspace, Meeting, Task, Member } from "./types";
-import { Auth } from "./Auth";
-import { StudioLanding } from "./StudioLanding";
-const MeetingRoom = lazy(() =>
-  import("./MeetingRoom").then((m) => ({ default: m.MeetingRoom })),
-);
-import { SettingsPage, HelpPage, Notifications } from "./Pages";
-import { Modal, Empty, Loading, ErrorBox, Submit, dateLabel } from "./ui";
-import "./App.css";
-import "./Signature.css";
-import "./WorkspacePolish.css";
-import { SignalMark, MeetingSpotlight } from "./Brand";
-import {
-  WorkspaceSearch,
-  GettingStarted,
-  WeekAgenda,
-} from "./WorkspaceExperience";
-import { useSearchShortcut } from "./useSearchShortcut";
-import { navigate, usePathname } from "./navigation";
+} from 'lucide-react';
+import { api, restoreSession, clearSession, ApiError } from './api';
+import type { User } from './api';
+import type { Workspace, Meeting, Task, Member } from './types';
+import { Auth } from './Auth';
+import { StudioLanding } from './StudioLanding';
+const MeetingRoom = lazy(() => import('./MeetingRoom').then((m) => ({ default: m.MeetingRoom })));
+import { SettingsPage, HelpPage, Notifications } from './Pages';
+import { Modal, Empty, Loading, ErrorBox, Submit, dateLabel } from './ui';
+import './App.css';
+import './Signature.css';
+import './WorkspacePolish.css';
+import { SignalMark, MeetingSpotlight } from './Brand';
+import { WorkspaceSearch, GettingStarted, WeekAgenda } from './WorkspaceExperience';
+import { useSearchShortcut } from './useSearchShortcut';
+import { navigate, usePathname } from './navigation';
 
 const authPaths = [
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-email",
-  "/auth/callback",
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/auth/callback',
 ];
-type Page =
-  | "overview"
-  | "meetings"
-  | "tasks"
-  | "team"
-  | "settings"
-  | "help"
-  | "notifications";
+type Page = 'overview' | 'meetings' | 'tasks' | 'team' | 'settings' | 'help' | 'notifications';
 const nav = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "meetings", label: "Meetings", icon: CalendarDays },
-  { id: "tasks", label: "Action items", icon: CheckSquare },
-  { id: "team", label: "Your team", icon: Users },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'meetings', label: 'Meetings', icon: CalendarDays },
+  { id: 'tasks', label: 'Action items', icon: CheckSquare },
+  { id: 'team', label: 'Your team', icon: Users },
 ] as const;
 export default function App() {
   const path = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [boot, setBoot] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const signedInId = user?.id;
   useEffect(() => {
-    if (
-      !boot &&
-      !user &&
-      path !== "/" &&
-      path !== "/invite" &&
-      !authPaths.includes(path)
-    ) {
-      navigate(
-        ["/profile", "/settings"].includes(path)
-          ? "/login?next=profile"
-          : "/login",
-        true,
-      );
+    if (!boot && !user && path !== '/' && path !== '/invite' && !authPaths.includes(path)) {
+      navigate(['/profile', '/settings'].includes(path) ? '/login?next=profile' : '/login', true);
     }
   }, [boot, user, path]);
   useEffect(() => {
@@ -92,28 +68,25 @@ export default function App() {
     let active = true;
     let checking = false;
     const check = async () => {
-      if (!active || checking || document.visibilityState !== "visible") return;
+      if (!active || checking || document.visibilityState !== 'visible') return;
       checking = true;
       try {
-        const result = await api<{ user: User }>("/auth/me");
-        if (active)
-          setUser((current) =>
-            current?.id === result.user.id ? result.user : current,
-          );
+        const result = await api<{ user: User }>('/auth/me');
+        if (active) setUser((current) => (current?.id === result.user.id ? result.user : current));
       } catch {
         // The API clears expired sessions. Temporary network failures do not sign users out.
       } finally {
         checking = false;
       }
     };
-    window.addEventListener("focus", check);
-    document.addEventListener("visibilitychange", check);
+    window.addEventListener('focus', check);
+    document.addEventListener('visibilitychange', check);
     const timer = window.setInterval(check, 60000);
     return () => {
       active = false;
       window.clearInterval(timer);
-      window.removeEventListener("focus", check);
-      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener('focus', check);
+      document.removeEventListener('visibilitychange', check);
     };
   }, [signedInId]);
   useEffect(() => {
@@ -122,34 +95,30 @@ export default function App() {
     const ended = (event: Event) => {
       endedSession = true;
       setUser(null);
-      setError("");
-      const expired =
-        (event as CustomEvent<{ reason?: string }>).detail?.reason ===
-        "expired";
+      setError('');
+      const expired = (event as CustomEvent<{ reason?: string }>).detail?.reason === 'expired';
       if (expired || !authPaths.includes(location.pathname))
-        navigate(expired ? "/login?notice=session-expired" : "/login", true);
+        navigate(expired ? '/login?notice=session-expired' : '/login', true);
     };
-    window.addEventListener("session-ended", ended);
+    window.addEventListener('session-ended', ended);
     restoreSession()
-      .then(() => api<{ user: User }>("/auth/me"))
+      .then(() => api<{ user: User }>('/auth/me'))
       .then((r) => {
         if (active && !endedSession) setUser(r.user);
       })
       .catch((e) => {
         if (active && !(e instanceof ApiError && e.status === 401))
-          setError(
-            "Account services are temporarily unavailable. Please try again shortly.",
-          );
+          setError('Account services are temporarily unavailable. Please try again shortly.');
       })
       .finally(() => {
         if (active) setBoot(false);
       });
     return () => {
       active = false;
-      window.removeEventListener("session-ended", ended);
+      window.removeEventListener('session-ended', ended);
     };
   }, []);
-  if (!user && path === "/") return <StudioLanding />;
+  if (!user && path === '/') return <StudioLanding />;
   if (boot && !authPaths.includes(path)) return <Loading />;
   if (!user || authPaths.includes(path))
     return (
@@ -158,13 +127,13 @@ export default function App() {
         <Auth
           key={path + location.search}
           ready={(nextUser) => {
-            setError("");
+            setError('');
             setUser(nextUser);
-            if (location.pathname !== "/invite")
+            if (location.pathname !== '/invite')
               navigate(
-                new URLSearchParams(location.search).get("next") === "profile"
-                  ? "/profile"
-                  : "/workspace",
+                new URLSearchParams(location.search).get('next') === 'profile'
+                  ? '/profile'
+                  : '/workspace',
                 true,
               );
           }}
@@ -173,17 +142,9 @@ export default function App() {
     );
   return <WorkspaceApp user={user} onUserChange={setUser} />;
 }
-function WorkspaceApp({
-  user,
-  onUserChange,
-}: {
-  user: User;
-  onUserChange: (user: User) => void;
-}) {
+function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user: User) => void }) {
   const [page, setPage] = useState<Page>(() =>
-    ["/profile", "/settings"].includes(location.pathname)
-      ? "settings"
-      : "overview",
+    ['/profile', '/settings'].includes(location.pathname) ? 'settings' : 'overview',
   );
   const [today] = useState(() => new Date());
   const [defaultStart] = useState(() =>
@@ -192,33 +153,29 @@ function WorkspaceApp({
       .slice(0, 16),
   );
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [workspaceId, setWorkspaceId] = useState("");
+  const [workspaceId, setWorkspaceId] = useState('');
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [modal, setModal] = useState<
-    "workspace" | "meeting" | "task" | "invite" | null
-  >(null);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [modal, setModal] = useState<'workspace' | 'meeting' | 'task' | 'invite' | null>(null);
   const [room, setRoom] = useState<Meeting | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [mobile, setMobile] = useState(false);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState('all');
   const [busy, setBusy] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const showSearch = useCallback(() => setSearchOpen(true), []);
   useSearchShortcut(showSearch);
   const workspace = workspaces.find((w) => w._id === workspaceId);
-  const admin = workspace?.role !== "member";
+  const admin = workspace?.role !== 'member';
   const loadWorkspaces = useCallback(async () => {
-    const r = await api<{ workspaces: Workspace[] }>("/workspaces");
+    const r = await api<{ workspaces: Workspace[] }>('/workspaces');
     setWorkspaces(r.workspaces);
     setWorkspaceId((current) =>
-      r.workspaces.some((w) => w._id === current)
-        ? current
-        : r.workspaces[0]?._id || "",
+      r.workspaces.some((w) => w._id === current) ? current : r.workspaces[0]?._id || '',
     );
   }, []);
   useEffect(() => {
@@ -229,9 +186,7 @@ function WorkspaceApp({
   const reload = useCallback(async () => {
     if (!workspaceId) return;
     const [m, t, p] = await Promise.all([
-      api<{ meetings: Meeting[] }>(
-        `/workspaces/${workspaceId}/meetings?limit=100`,
-      ),
+      api<{ meetings: Meeting[] }>(`/workspaces/${workspaceId}/meetings?limit=100`),
       api<{ tasks: Task[] }>(`/workspaces/${workspaceId}/tasks?limit=100`),
       api<{ members: Member[] }>(`/workspaces/${workspaceId}/members`),
     ]);
@@ -252,14 +207,14 @@ function WorkspaceApp({
   }, [workspaceId, reload]);
   const act = useCallback(
     async (fn: () => Promise<unknown>, message?: string) => {
-      setError("");
+      setError('');
       setBusy(true);
       try {
         await fn();
         await reload();
         if (message) setNotice(message);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Unable to complete request");
+        setError(e instanceof Error ? e.message : 'Unable to complete request');
       } finally {
         setBusy(false);
       }
@@ -267,69 +222,62 @@ function WorkspaceApp({
     [reload],
   );
   useEffect(() => {
-    const token = new URLSearchParams(location.hash.slice(1)).get("token");
-    if (location.pathname === "/invite" && token) {
-      history.replaceState(null, "", "/");
+    const token = new URLSearchParams(location.hash.slice(1)).get('token');
+    if (location.pathname === '/invite' && token) {
+      history.replaceState(null, '', '/');
       void act(async () => {
-        await api("/invitations/accept", "POST", { token });
+        await api('/invitations/accept', 'POST', { token });
         await loadWorkspaces();
-      }, "Invitation accepted.");
+      }, 'Invitation accepted.');
     }
   }, [act, loadWorkspaces]);
   async function create(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const d = new FormData(e.currentTarget);
     setBusy(true);
-    setError("");
+    setError('');
     try {
-      if (modal === "workspace") {
-        const r = await api<{ workspace: Workspace }>("/workspaces", "POST", {
-          name: d.get("name"),
+      if (modal === 'workspace') {
+        const r = await api<{ workspace: Workspace }>('/workspaces', 'POST', {
+          name: d.get('name'),
         });
         await loadWorkspaces();
         setWorkspaceId(r.workspace._id);
-      } else if (modal === "meeting") {
-        const r = await api<{ meeting: Meeting }>(
-          `/workspaces/${workspaceId}/meetings`,
-          "POST",
-          {
-            title: d.get("title"),
-            description: d.get("description"),
-            startsAt: new Date(String(d.get("startsAt"))).toISOString(),
-            durationMinutes: Number(d.get("durationMinutes")),
-            visibility: "workspace",
-            invitees: [],
-            lobbyEnabled: d.get("lobby") === "on",
-            processingMode:
-              d.get("confidential") === "on" ? "confidential" : "standard",
-          },
-        );
-        if (d.get("instant") === "on") {
-          await api(`/meetings/${r.meeting._id}/start`, "POST", {});
-          setRoom({ ...r.meeting, status: "live" });
+      } else if (modal === 'meeting') {
+        const r = await api<{ meeting: Meeting }>(`/workspaces/${workspaceId}/meetings`, 'POST', {
+          title: d.get('title'),
+          description: d.get('description'),
+          startsAt: new Date(String(d.get('startsAt'))).toISOString(),
+          durationMinutes: Number(d.get('durationMinutes')),
+          visibility: 'workspace',
+          invitees: [],
+          lobbyEnabled: d.get('lobby') === 'on',
+          processingMode: d.get('confidential') === 'on' ? 'confidential' : 'standard',
+        });
+        if (d.get('instant') === 'on') {
+          await api(`/meetings/${r.meeting._id}/start`, 'POST', {});
+          setRoom({ ...r.meeting, status: 'live' });
         }
         await reload();
-      } else if (modal === "task") {
-        await api(`/workspaces/${workspaceId}/tasks`, "POST", {
-          title: d.get("title"),
-          description: d.get("description"),
-          priority: d.get("priority"),
-          ...(d.get("dueAt")
-            ? { dueAt: new Date(String(d.get("dueAt"))).toISOString() }
-            : {}),
-          ...(d.get("assigneeId") ? { assigneeId: d.get("assigneeId") } : {}),
+      } else if (modal === 'task') {
+        await api(`/workspaces/${workspaceId}/tasks`, 'POST', {
+          title: d.get('title'),
+          description: d.get('description'),
+          priority: d.get('priority'),
+          ...(d.get('dueAt') ? { dueAt: new Date(String(d.get('dueAt'))).toISOString() } : {}),
+          ...(d.get('assigneeId') ? { assigneeId: d.get('assigneeId') } : {}),
         });
         await reload();
-      } else if (modal === "invite") {
-        await api(`/workspaces/${workspaceId}/invitations`, "POST", {
-          email: d.get("email"),
-          role: d.get("role"),
+      } else if (modal === 'invite') {
+        await api(`/workspaces/${workspaceId}/invitations`, 'POST', {
+          email: d.get('email'),
+          role: d.get('role'),
         });
-        setNotice("Invitation sent.");
+        setNotice('Invitation sent.');
       }
       setModal(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to save");
+      setError(e instanceof Error ? e.message : 'Unable to save');
     } finally {
       setBusy(false);
     }
@@ -337,12 +285,12 @@ function WorkspaceApp({
   const visibleMeetings = meetings.filter(
     (m) =>
       m.title.toLowerCase().includes(query.toLowerCase()) &&
-      (filter === "all" || m.status === filter),
+      (filter === 'all' || m.status === filter),
   );
   const upcoming = [...meetings]
-    .filter((m) => m.status === "live" || m.status === "scheduled")
+    .filter((m) => m.status === 'live' || m.status === 'scheduled')
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
-  const openTasks = tasks.filter((t) => t.status !== "done");
+  const openTasks = tasks.filter((t) => t.status !== 'done');
   if (room && workspace)
     return (
       <Suspense fallback={<Loading />}>
@@ -370,7 +318,7 @@ function WorkspaceApp({
           onClick={() => setMobile(false)}
         />
       )}
-      <aside className={`sidebar ${mobile ? "mobile-open" : ""}`}>
+      <aside className={`sidebar ${mobile ? 'mobile-open' : ''}`}>
         <a className="brand" href="/">
           <span className="brand-icon">
             <SignalMark />
@@ -385,9 +333,7 @@ function WorkspaceApp({
           <X />
         </button>
         <div className="workspace-select">
-          <span className="workspace-avatar">
-            {workspace?.name.charAt(0) || "W"}
-          </span>
+          <span className="workspace-avatar">{workspace?.name.charAt(0) || 'W'}</span>
           <label>
             <small>WORKSPACE</small>
             <select
@@ -405,7 +351,7 @@ function WorkspaceApp({
           </label>
           <ChevronDown size={15} />
         </div>
-        <button className="workspace-add" onClick={() => setModal("workspace")}>
+        <button className="workspace-add" onClick={() => setModal('workspace')}>
           <Plus size={14} />
           New workspace
         </button>
@@ -414,18 +360,18 @@ function WorkspaceApp({
           {nav.map((n) => (
             <button
               key={n.id}
-              className={page === n.id ? "active" : ""}
-              aria-current={page === n.id ? "page" : undefined}
+              className={page === n.id ? 'active' : ''}
+              aria-current={page === n.id ? 'page' : undefined}
               onClick={() => {
                 setPage(n.id);
                 setMobile(false);
-                setQuery("");
-                setFilter("all");
+                setQuery('');
+                setFilter('all');
               }}
             >
               <n.icon size={19} />
               {n.label}
-              {n.id === "tasks" && openTasks.length > 0 && (
+              {n.id === 'tasks' && openTasks.length > 0 && (
                 <span className="nav-count">{openTasks.length}</span>
               )}
             </button>
@@ -435,10 +381,7 @@ function WorkspaceApp({
           <div className="focus-card">
             <Sparkles size={21} />
             <h4>More from every meeting</h4>
-            <p>
-              Turn shared ideas into clear next steps, with your team in
-              control.
-            </p>
+            <p>Turn shared ideas into clear next steps, with your team in control.</p>
             <span>
               Thoughtful collaboration
               <ArrowUpRight size={15} />
@@ -446,16 +389,13 @@ function WorkspaceApp({
           </div>
           <nav>
             <button
-              className={page === "settings" ? "active" : ""}
-              onClick={() => setPage("settings")}
+              className={page === 'settings' ? 'active' : ''}
+              onClick={() => setPage('settings')}
             >
               <Settings size={18} />
               Settings
             </button>
-            <button
-              className={page === "help" ? "active" : ""}
-              onClick={() => setPage("help")}
-            >
+            <button className={page === 'help' ? 'active' : ''} onClick={() => setPage('help')}>
               <HelpCircle size={18} />
               Help & support
             </button>
@@ -464,14 +404,14 @@ function WorkspaceApp({
             <span className="avatar">{user.name.charAt(0)}</span>
             <div>
               <strong>{user.name}</strong>
-              <small>{workspace?.role || "Member"}</small>
+              <small>{workspace?.role || 'Member'}</small>
             </div>
             <button
               className="icon-button"
               aria-label="Sign out"
               onClick={() =>
                 void act(async () => {
-                  await api("/auth/logout", "POST", {});
+                  await api('/auth/logout', 'POST', {});
                   clearSession();
                 })
               }
@@ -495,12 +435,12 @@ function WorkspaceApp({
             <span className="breadcrumb">
               Workspace<span>/</span>
               <strong>
-                {page === "overview"
-                  ? "Overview"
-                  : page === "team"
-                    ? "Your team"
-                    : page === "tasks"
-                      ? "Action items"
+                {page === 'overview'
+                  ? 'Overview'
+                  : page === 'team'
+                    ? 'Your team'
+                    : page === 'tasks'
+                      ? 'Action items'
                       : page.charAt(0).toUpperCase() + page.slice(1)}
               </strong>
             </span>
@@ -522,7 +462,7 @@ function WorkspaceApp({
             <button
               className="icon-button"
               aria-label="Notifications"
-              onClick={() => setPage("notifications")}
+              onClick={() => setPage('notifications')}
             >
               <Bell size={20} />
             </button>
@@ -537,7 +477,7 @@ function WorkspaceApp({
               <button
                 className="icon-button"
                 aria-label="Dismiss notification"
-                onClick={() => setNotice("")}
+                onClick={() => setNotice('')}
               >
                 <X size={16} />
               </button>
@@ -547,63 +487,56 @@ function WorkspaceApp({
             <div>
               <div className="eyebrow">
                 {today.toLocaleDateString(undefined, {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
                 })}
               </div>
               <h1>
-                {page === "overview"
-                  ? `Good ${today.getHours() < 12 ? "morning" : today.getHours() < 18 ? "afternoon" : "evening"}, ${user.name.split(" ")[0]}.`
-                  : page === "meetings"
-                    ? "Make every conversation count."
-                    : page === "tasks"
-                      ? "From conversation to action."
-                      : page === "team"
-                        ? "Better work, together."
-                        : page === "settings"
-                          ? "Your workspace, your way."
-                          : page === "help"
-                            ? "A little help goes a long way."
-                            : "Stay in the loop."}
+                {page === 'overview'
+                  ? `Good ${today.getHours() < 12 ? 'morning' : today.getHours() < 18 ? 'afternoon' : 'evening'}, ${user.name.split(' ')[0]}.`
+                  : page === 'meetings'
+                    ? 'Make every conversation count.'
+                    : page === 'tasks'
+                      ? 'From conversation to action.'
+                      : page === 'team'
+                        ? 'Better work, together.'
+                        : page === 'settings'
+                          ? 'Your workspace, your way.'
+                          : page === 'help'
+                            ? 'A little help goes a long way.'
+                            : 'Stay in the loop.'}
               </h1>
               <p>
-                {page === "overview"
-                  ? "A little clarity for your day. Here’s what’s happening with your team."
-                  : page === "meetings"
-                    ? "Plan, connect, and keep your team moving forward."
-                    : page === "tasks"
-                      ? "Clear ownership. Shared progress. Nothing left behind."
-                      : page === "team"
-                        ? "The people making things happen."
-                        : "Manage your IntellMeet experience."}
+                {page === 'overview'
+                  ? 'A little clarity for your day. Here’s what’s happening with your team.'
+                  : page === 'meetings'
+                    ? 'Plan, connect, and keep your team moving forward.'
+                    : page === 'tasks'
+                      ? 'Clear ownership. Shared progress. Nothing left behind.'
+                      : page === 'team'
+                        ? 'The people making things happen.'
+                        : 'Manage your IntellMeet experience.'}
               </p>
             </div>
-            {workspaceId &&
-              ["overview", "meetings", "tasks", "team"].includes(page) && (
-                <button
-                  className="primary"
-                  onClick={() =>
-                    setModal(
-                      page === "tasks"
-                        ? "task"
-                        : page === "team"
-                          ? "invite"
-                          : "meeting",
-                    )
-                  }
-                  disabled={page === "team" && !admin}
-                >
-                  <Plus size={18} />
-                  {page === "tasks"
-                    ? "New action item"
-                    : page === "team"
-                      ? "Invite teammate"
-                      : "New meeting"}
-                </button>
-              )}
+            {workspaceId && ['overview', 'meetings', 'tasks', 'team'].includes(page) && (
+              <button
+                className="primary"
+                onClick={() =>
+                  setModal(page === 'tasks' ? 'task' : page === 'team' ? 'invite' : 'meeting')
+                }
+                disabled={page === 'team' && !admin}
+              >
+                <Plus size={18} />
+                {page === 'tasks'
+                  ? 'New action item'
+                  : page === 'team'
+                    ? 'Invite teammate'
+                    : 'New meeting'}
+              </button>
+            )}
           </div>
-          {page === "settings" ? (
+          {page === 'settings' ? (
             <SettingsPage
               user={user}
               workspace={workspace}
@@ -617,10 +550,7 @@ function WorkspaceApp({
               title="Your next chapter starts here"
               detail="Create a workspace to bring your meetings, people, and projects together."
               action={
-                <button
-                  className="primary"
-                  onClick={() => setModal("workspace")}
-                >
+                <button className="primary" onClick={() => setModal('workspace')}>
                   <Plus size={18} />
                   Create your workspace
                 </button>
@@ -628,63 +558,57 @@ function WorkspaceApp({
             />
           ) : (
             <>
-              {page === "overview" && (
+              {page === 'overview' && (
                 <>
                   <MeetingSpotlight
-                    meeting={
-                      upcoming.find((m) => m.status === "live") || upcoming[0]
-                    }
+                    meeting={upcoming.find((m) => m.status === 'live') || upcoming[0]}
                     open={setRoom}
-                    schedule={() => setModal("meeting")}
+                    schedule={() => setModal('meeting')}
                   />
                   <GettingStarted
                     meetings={meetings}
                     tasks={tasks}
                     members={members}
-                    schedule={() => setModal("meeting")}
-                    invite={() => setModal("invite")}
-                    createTask={() => setModal("task")}
+                    schedule={() => setModal('meeting')}
+                    invite={() => setModal('invite')}
+                    createTask={() => setModal('task')}
                     canInvite={admin}
                   />
                   <div className="stats-grid">
                     {[
                       {
-                        label: "Upcoming meetings",
+                        label: 'Upcoming meetings',
                         value: upcoming.length,
                         icon: CalendarDays,
-                        foot: "Ready when you are",
-                        color: "mint",
+                        foot: 'Ready when you are',
+                        color: 'mint',
                       },
                       {
-                        label: "Open action items",
+                        label: 'Open action items',
                         value: openTasks.length,
                         icon: CheckSquare,
-                        foot: "Your team’s next steps",
-                        color: "peach",
+                        foot: 'Your team’s next steps',
+                        color: 'peach',
                       },
                       {
-                        label: "Team members",
+                        label: 'Team members',
                         value: members.length,
                         icon: Users,
-                        foot: "One connected workspace",
-                        color: "lavender",
+                        foot: 'One connected workspace',
+                        color: 'lavender',
                       },
                       {
-                        label: "Completed meetings",
-                        value: meetings.filter((m) => m.status === "ended")
-                          .length,
+                        label: 'Completed meetings',
+                        value: meetings.filter((m) => m.status === 'ended').length,
                         icon: Video,
-                        foot: "Conversations that count",
-                        color: "blue",
+                        foot: 'Conversations that count',
+                        color: 'blue',
                       },
                     ].map((s) => (
                       <article className="stat-card" key={s.label}>
                         <div>
                           <span>{s.label}</span>
-                          <s.icon
-                            className={`stat-icon ${s.color}`}
-                            size={38}
-                          />
+                          <s.icon className={`stat-icon ${s.color}`} size={38} />
                         </div>
                         <strong>{s.value}</strong>
                         <small>{s.foot}</small>
@@ -699,10 +623,7 @@ function WorkspaceApp({
                           <h2>On the agenda</h2>
                           <p>Your upcoming and live conversations</p>
                         </div>
-                        <button
-                          className="text-button"
-                          onClick={() => setPage("meetings")}
-                        >
+                        <button className="text-button" onClick={() => setPage('meetings')}>
                           View all
                           <ArrowUpRight size={15} />
                         </button>
@@ -711,21 +632,14 @@ function WorkspaceApp({
                         upcoming
                           .slice(0, 4)
                           .map((m) => (
-                            <MeetingCard
-                              key={m._id}
-                              meeting={m}
-                              open={() => setRoom(m)}
-                            />
+                            <MeetingCard key={m._id} meeting={m} open={() => setRoom(m)} />
                           ))
                       ) : (
                         <Empty
                           title="A little breathing room"
                           detail="There are no upcoming meetings. Schedule a conversation when you’re ready."
                           action={
-                            <button
-                              className="secondary"
-                              onClick={() => setModal("meeting")}
-                            >
+                            <button className="secondary" onClick={() => setModal('meeting')}>
                               Schedule a meeting
                             </button>
                           }
@@ -748,14 +662,10 @@ function WorkspaceApp({
                             busy={busy}
                             update={() =>
                               void act(() =>
-                                api(
-                                  `/workspaces/${workspaceId}/tasks/${t._id}`,
-                                  "PATCH",
-                                  {
-                                    status: "done",
-                                    version: t.version,
-                                  },
-                                ),
+                                api(`/workspaces/${workspaceId}/tasks/${t._id}`, 'PATCH', {
+                                  status: 'done',
+                                  version: t.version,
+                                }),
                               )
                             }
                           />
@@ -766,10 +676,7 @@ function WorkspaceApp({
                           detail="Create an action item or accept one from a meeting summary."
                         />
                       )}
-                      <button
-                        className="panel-footer"
-                        onClick={() => setPage("tasks")}
-                      >
+                      <button className="panel-footer" onClick={() => setPage('tasks')}>
                         See all action items
                         <ArrowUpRight size={15} />
                       </button>
@@ -780,20 +687,15 @@ function WorkspaceApp({
                       <Sparkles size={26} />
                     </div>
                     <div>
-                      <span className="eyebrow">
-                        A LITTLE LESS ADMIN. A LOT MORE CLARITY.
-                      </span>
+                      <span className="eyebrow">A LITTLE LESS ADMIN. A LOT MORE CLARITY.</span>
                       <h2>Let the conversation lead to something.</h2>
-                      <p>
-                        Review transcripts, explore summaries, and decide what
-                        happens next.
-                      </p>
+                      <p>Review transcripts, explore summaries, and decide what happens next.</p>
                     </div>
                     <button
                       className="secondary"
                       onClick={() => {
-                        setPage("meetings");
-                        setFilter("ended");
+                        setPage('meetings');
+                        setFilter('ended');
                       }}
                     >
                       Explore past meetings
@@ -802,26 +704,22 @@ function WorkspaceApp({
                   </section>
                 </>
               )}
-              {page === "meetings" && (
+              {page === 'meetings' && (
                 <>
                   <WeekAgenda meetings={meetings} open={setRoom} />
                   <section className="panel">
                     <div className="list-toolbar">
                       <div className="tabs">
-                        {["all", "scheduled", "live", "ended", "cancelled"].map(
-                          (f) => (
-                            <button
-                              key={f}
-                              className={filter === f ? "selected" : ""}
-                              aria-pressed={filter === f}
-                              onClick={() => setFilter(f)}
-                            >
-                              {f === "all"
-                                ? "All meetings"
-                                : f.charAt(0).toUpperCase() + f.slice(1)}
-                            </button>
-                          ),
-                        )}
+                        {['all', 'scheduled', 'live', 'ended', 'cancelled'].map((f) => (
+                          <button
+                            key={f}
+                            className={filter === f ? 'selected' : ''}
+                            aria-pressed={filter === f}
+                            onClick={() => setFilter(f)}
+                          >
+                            {f === 'all' ? 'All meetings' : f.charAt(0).toUpperCase() + f.slice(1)}
+                          </button>
+                        ))}
                       </div>
                       <label className="search-box">
                         <Search size={17} />
@@ -835,11 +733,7 @@ function WorkspaceApp({
                     </div>
                     {visibleMeetings.length ? (
                       visibleMeetings.map((m) => (
-                        <MeetingCard
-                          key={m._id}
-                          meeting={m}
-                          open={() => setRoom(m)}
-                        />
+                        <MeetingCard key={m._id} meeting={m} open={() => setRoom(m)} />
                       ))
                     ) : (
                       <Empty
@@ -850,30 +744,26 @@ function WorkspaceApp({
                   </section>
                 </>
               )}
-              {page === "tasks" && (
+              {page === 'tasks' && (
                 <div className="kanban">
-                  {(["todo", "in_progress", "done"] as const).map((status) => (
+                  {(['todo', 'in_progress', 'done'] as const).map((status) => (
                     <section key={status}>
                       <div className="column-title">
                         <span className={`status-dot ${status}`} />
                         <h2>
-                          {status === "todo"
-                            ? "To do"
-                            : status === "in_progress"
-                              ? "In progress"
-                              : "Done"}
+                          {status === 'todo'
+                            ? 'To do'
+                            : status === 'in_progress'
+                              ? 'In progress'
+                              : 'Done'}
                         </h2>
-                        <span>
-                          {tasks.filter((t) => t.status === status).length}
-                        </span>
+                        <span>{tasks.filter((t) => t.status === status).length}</span>
                       </div>
                       {tasks
                         .filter((t) => t.status === status)
                         .map((t) => (
                           <article className="task-card" key={t._id}>
-                            <span className={`badge ${t.priority}`}>
-                              {t.priority} priority
-                            </span>
+                            <span className={`badge ${t.priority}`}>{t.priority} priority</span>
                             <h3>{t.title}</h3>
                             {t.description && <p>{t.description}</p>}
                             {t.dueAt && (
@@ -882,10 +772,7 @@ function WorkspaceApp({
                                 {dateLabel(t.dueAt)}
                               </small>
                             )}
-                            <label
-                              className="sr-only"
-                              htmlFor={`status-${t._id}`}
-                            >
+                            <label className="sr-only" htmlFor={`status-${t._id}`}>
                               Status for {t.title}
                             </label>
                             <select
@@ -894,14 +781,10 @@ function WorkspaceApp({
                               disabled={busy}
                               onChange={(e) =>
                                 void act(() =>
-                                  api(
-                                    `/workspaces/${workspaceId}/tasks/${t._id}`,
-                                    "PATCH",
-                                    {
-                                      status: e.target.value,
-                                      version: t.version,
-                                    },
-                                  ),
+                                  api(`/workspaces/${workspaceId}/tasks/${t._id}`, 'PATCH', {
+                                    status: e.target.value,
+                                    version: t.version,
+                                  }),
                                 )
                               }
                             >
@@ -918,7 +801,7 @@ function WorkspaceApp({
                   ))}
                 </div>
               )}
-              {page === "team" && (
+              {page === 'team' && (
                 <section className="panel">
                   <div className="panel-heading">
                     <div>
@@ -929,10 +812,8 @@ function WorkspaceApp({
                   <div className="member-grid">
                     {members.map((m) => (
                       <article key={m.userId} className="member-card">
-                        <span className="avatar">
-                          {m.user?.name?.charAt(0) || "?"}
-                        </span>
-                        <h3>{m.user?.name || "Workspace member"}</h3>
+                        <span className="avatar">{m.user?.name?.charAt(0) || '?'}</span>
+                        <h3>{m.user?.name || 'Workspace member'}</h3>
                         <p>{m.user?.email}</p>
                         <span className="badge">{m.role}</span>
                       </article>
@@ -940,8 +821,8 @@ function WorkspaceApp({
                   </div>
                 </section>
               )}
-              {page === "help" && <HelpPage workspaceId={workspaceId} />}
-              {page === "notifications" && <Notifications />}
+              {page === 'help' && <HelpPage workspaceId={workspaceId} />}
+              {page === 'notifications' && <Notifications />}
             </>
           )}
           <footer className="content-footer">
@@ -960,29 +841,29 @@ function WorkspaceApp({
           members={members}
           close={() => setSearchOpen(false)}
           openMeeting={setRoom}
-          openTasks={() => setPage("tasks")}
-          openTeam={() => setPage("team")}
+          openTasks={() => setPage('tasks')}
+          openTeam={() => setPage('team')}
         />
       )}
       {modal && (
         <Modal
           title={
-            modal === "workspace"
-              ? "Create a workspace"
-              : modal === "meeting"
-                ? "Schedule a conversation"
-                : modal === "task"
-                  ? "Create an action item"
-                  : "Invite a teammate"
+            modal === 'workspace'
+              ? 'Create a workspace'
+              : modal === 'meeting'
+                ? 'Schedule a conversation'
+                : modal === 'task'
+                  ? 'Create an action item'
+                  : 'Invite a teammate'
           }
           close={() => {
             setModal(null);
-            setError("");
+            setError('');
           }}
         >
           <ErrorBox message={error} />
           <form onSubmit={create}>
-            {modal === "workspace" ? (
+            {modal === 'workspace' ? (
               <label>
                 Workspace name
                 <input
@@ -993,7 +874,7 @@ function WorkspaceApp({
                   autoFocus
                 />
               </label>
-            ) : modal === "invite" ? (
+            ) : modal === 'invite' ? (
               <>
                 <label>
                   Work email
@@ -1010,16 +891,14 @@ function WorkspaceApp({
             ) : (
               <>
                 <label>
-                  {modal === "meeting" ? "Meeting title" : "Action item title"}
+                  {modal === 'meeting' ? 'Meeting title' : 'Action item title'}
                   <input
                     name="title"
                     required
-                    maxLength={modal === "meeting" ? 200 : 500}
+                    maxLength={modal === 'meeting' ? 200 : 500}
                     autoFocus
                     placeholder={
-                      modal === "meeting"
-                        ? "e.g. Weekly team sync"
-                        : "What needs to happen next?"
+                      modal === 'meeting' ? 'e.g. Weekly team sync' : 'What needs to happen next?'
                     }
                   />
                 </label>
@@ -1031,7 +910,7 @@ function WorkspaceApp({
                     placeholder="A little context goes a long way."
                   />
                 </label>
-                {modal === "meeting" ? (
+                {modal === 'meeting' ? (
                   <>
                     <div className="form-row">
                       <label>
@@ -1097,7 +976,7 @@ function WorkspaceApp({
               </>
             )}
             <Submit busy={busy}>
-              {modal === "invite" ? "Send invitation" : "Save and continue"}
+              {modal === 'invite' ? 'Send invitation' : 'Save and continue'}
             </Submit>
           </form>
         </Modal>
@@ -1105,18 +984,12 @@ function WorkspaceApp({
     </div>
   );
 }
-function MeetingCard({
-  meeting: m,
-  open,
-}: {
-  meeting: Meeting;
-  open: () => void;
-}) {
+function MeetingCard({ meeting: m, open }: { meeting: Meeting; open: () => void }) {
   const d = new Date(m.startsAt);
   return (
     <article className="meeting-card">
       <div className="date-tile">
-        <span>{d.toLocaleDateString(undefined, { month: "short" })}</span>
+        <span>{d.toLocaleDateString(undefined, { month: 'short' })}</span>
         <strong>{d.getDate()}</strong>
       </div>
       <div className="meeting-info">
@@ -1124,44 +997,26 @@ function MeetingCard({
         <p>
           <Clock size={13} />
           {d.toLocaleTimeString(undefined, {
-            hour: "numeric",
-            minute: "2-digit",
+            hour: 'numeric',
+            minute: '2-digit',
           })}
           <span>·</span>
           {m.durationMinutes} min<span>·</span>
-          {m.processingMode === "confidential"
-            ? "Confidential"
-            : "Team meeting"}
+          {m.processingMode === 'confidential' ? 'Confidential' : 'Team meeting'}
         </p>
       </div>
-      <span className={`badge ${m.status}`}>
-        {m.status === "live" ? "Live now" : m.status}
-      </span>
+      <span className={`badge ${m.status}`}>{m.status === 'live' ? 'Live now' : m.status}</span>
       <button
-        className={
-          m.status === "live" ? "primary compact" : "secondary compact"
-        }
+        className={m.status === 'live' ? 'primary compact' : 'secondary compact'}
         onClick={open}
       >
-        {m.status === "live"
-          ? "Join meeting"
-          : m.status === "ended"
-            ? "View recap"
-            : "Open"}
+        {m.status === 'live' ? 'Join meeting' : m.status === 'ended' ? 'View recap' : 'Open'}
         <ArrowUpRight size={15} />
       </button>
     </article>
   );
 }
-function TaskRow({
-  task,
-  update,
-  busy,
-}: {
-  task: Task;
-  update: () => void;
-  busy: boolean;
-}) {
+function TaskRow({ task, update, busy }: { task: Task; update: () => void; busy: boolean }) {
   return (
     <div className="task-row">
       <button
@@ -1174,7 +1029,7 @@ function TaskRow({
       </button>
       <div>
         <strong>{task.title}</strong>
-        <small>{task.dueAt ? dateLabel(task.dueAt) : "No due date"}</small>
+        <small>{task.dueAt ? dateLabel(task.dueAt) : 'No due date'}</small>
       </div>
       <span className={`badge ${task.priority}`}>{task.priority}</span>
     </div>
