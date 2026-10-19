@@ -55,6 +55,26 @@ HTTPS/WSS endpoints where browsers connect, not Docker names or localhost. The w
 must share database, Redis, secrets and provider configuration with the backend.
 Leave VITE_API_URL and VITE_SOCKET_URL unset for shared-domain routing.
 
+### Missing production secrets
+
+If runtime logs report `JWT_SECRET` or `ENCRYPTION_KEY` as undefined, the application
+has loaded but Vercel Production variables are missing. Fix the Vercel environment;
+do not commit secrets, add hardcoded defaults, or weaken configuration validation.
+
+From backend/, run `npm run vercel:prepare-env -- https://intellmeet-frontend-rust.vercel.app`.
+This creates the ignored `.env.vercel.production.local` with fresh JWT, encryption and
+metrics secrets, HTTPS origins and production security flags. It never overwrites an
+existing file or prints secrets. Fill in MONGODB_URI, REDIS_URL, SMTP_URL and EMAIL_FROM
+with the actual cloud provider values. Do not import local MongoDB/Redis or captured
+email addresses into a cloud deployment. For an existing production database, retain
+its original encryption key and signing secret rather than replacing them with new ones.
+
+In this project's Vercel Environment Variables page, import the completed private file
+for Production. Store secret values as Secret; keep them server-side, without VITE_
+prefixes. Redeploy after saving: existing deployments retain their previous variables.
+The backend and worker need the same relevant values. A connected Vercel account must
+have access to the team that owns this project before an assistant can apply them.
+
 ## Verification
 
 Run npm ci in backend/ and frontend/, then their builds and backend tests.

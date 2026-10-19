@@ -7,6 +7,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "vercel:prepare-env": "node scripts/prepare-vercel-env.mjs",
     "dev": "tsx watch src/server.ts",
     "dev:worker": "tsx watch src/worker.ts",
     "build": "tsc -p tsconfig.json",
