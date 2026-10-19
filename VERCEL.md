@@ -27,6 +27,14 @@ server.ts and local-runtime scripts remain the standalone development path. Sock
 already uses WebSocket-only transport, resubscribes on connect, reloads state and uses
 the Redis adapter across instances. Connections can close at function duration limits.
 
+The backend's `outputDirectory` must remain `"."`. Without this override, the Vercel
+Services builder searches generated dist/ for a conventional entrypoint and may select
+dist/app.js (the app factory) instead of src/vercel.ts (the initialized HTTP server).
+It can also flatten that generated file outside its ESM package context, producing
+`SyntaxError: Cannot use import statement outside a module` in /var/task/app.js.
+Using the service root keeps the explicit TypeScript entrypoint on the source bundling
+path and preserves module/dependency handling. Do not set the backend output to dist.
+
 ## Environment
 
 Configure values in Vercel's environment settings, never Git. Use backend/.env.example

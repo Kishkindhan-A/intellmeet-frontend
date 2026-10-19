@@ -6,7 +6,8 @@
       "framework": "express",
       "entrypoint": "src/vercel.ts",
       "installCommand": "npm ci",
-      "buildCommand": "npm run build"
+      "buildCommand": "npm run build",
+      "outputDirectory": "."
     },
     "frontend": {
       "root": "frontend",
