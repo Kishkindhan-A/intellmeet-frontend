@@ -38,3 +38,15 @@ Signup, email verification, authenticated workspaces, video, files and AI have n
 verified end-to-end on this deployment. Redis credentials are saved but the backend's
 startup currently stops at MongoDB. SMTP credentials and actual delivery are unverified.
 Public-page checks and passing tests are not evidence that those live flows work.
+
+## Follow-up after switching to the owner's database
+
+Production was redeployed with the owner's Atlas URI and explicitly approved expiring
+network access (see ATLAS-SETUP.md). /health/ready and /api/auth/config now return 200.
+Unauthenticated /api/auth/me and a deliberately invalid login return 401. The browser
+signup form loads immediately, loads its account policy and enables registration.
+
+A single audit registration returned 503 MAIL_UNAVAILABLE, so email delivery is the
+next broken boundary. The created audit account remains unverified. Verified sign-in,
+workspace creation, video, AI and storage are not yet confirmed end-to-end. SMTP must
+be corrected before continuing the authentication audit; no security check was bypassed.
