@@ -362,14 +362,8 @@ export function HelpPage({ workspaceId }: { workspaceId: string }) {
         </p>
         <h3>Keep the next steps clear</h3>
         <p>Create action items from the workspace or review suggestions in a meeting recap.</p>
-        <h3>Development email</h3>
-        <p>
-          Verification and invitation messages appear in the{' '}
-          <a href="http://localhost:8026" target="_blank" rel="noreferrer">
-            local inbox
-          </a>
-          .
-        </p>
+        <h3>Account email</h3>
+        <p>Check your email inbox for account messages when email delivery is enabled.</p>
       </section>
       <section className="panel settings-panel">
         <h2>Contact workspace support</h2>

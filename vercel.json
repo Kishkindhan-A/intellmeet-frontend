@@ -1,0 +1,35 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "backend": {
+      "root": "backend",
+      "framework": "express",
+      "entrypoint": "src/vercel.ts",
+      "installCommand": "npm ci",
+      "buildCommand": "npm run build"
+    },
+    "frontend": {
+      "root": "frontend",
+      "framework": "vite",
+      "installCommand": "npm ci",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist",
+      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+    }
+  },
+  "daemons": {
+    "worker": {
+      "root": "backend",
+      "entrypoint": "Dockerfile.worker",
+      "instances": { "bom1": 1 }
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": { "service": "backend" } },
+    { "source": "/socket.io/:path*", "destination": { "service": "backend" } },
+    { "source": "/webhooks/:path*", "destination": { "service": "backend" } },
+    { "source": "/health/:path*", "destination": { "service": "backend" } },
+    { "source": "/.well-known/security.txt", "destination": { "service": "backend" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ]
+}
