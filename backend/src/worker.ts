@@ -14,6 +14,7 @@ services.runtime.events.emit = (room, event, payload) => {
   emitter.to(room).emit(event, payload);
 };
 const workerRedis = services.redis.duplicate({ maxRetriesPerRequest: null });
+workerRedis.on('error', () => services.runtime.logger.error('Worker Redis connection error'));
 const worker = new Worker(queueName, async (job) => processJob(services.runtime, job.data.id), {
   connection: workerRedis,
   concurrency: 3,

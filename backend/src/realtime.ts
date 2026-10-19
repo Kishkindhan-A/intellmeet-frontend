@@ -25,6 +25,8 @@ export async function attachRealtime(server: HttpServer, rt: Runtime, redis?: Re
   if (redis) {
     pub = redis.duplicate();
     sub = redis.duplicate();
+    pub.on('error', () => rt.logger.error('Realtime Redis publisher connection error'));
+    sub.on('error', () => rt.logger.error('Realtime Redis subscriber connection error'));
     io.adapter(createAdapter(pub, sub));
   }
   io.use(async (socket, next) => {

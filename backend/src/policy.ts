@@ -61,7 +61,8 @@ export async function hostAccess(
     'FORBIDDEN',
     'Meeting host required',
   );
-  if (access.member.role !== 'member')
+  // Hosting your assigned meeting does not use workspace administrator privileges.
+  if (access.meeting.hostId !== auth.userId && access.member.role !== 'member')
     assert(
       !rt.config.REQUIRE_ADMIN_MFA || auth.mfa,
       403,

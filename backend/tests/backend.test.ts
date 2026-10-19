@@ -884,6 +884,33 @@ describe('identity and workspace boundaries', () => {
   });
 });
 describe('meeting and collaboration workflows', () => {
+  it('lets an assigned host start their meeting while requiring MFA for administrator takeover', async () => {
+    const secured = createApp({ ...rt, config: { ...config, REQUIRE_ADMIN_MFA: true } });
+    const own = await request(app)
+      .post(`/api/workspaces/${workspaceId}/meetings`)
+      .set(auth(alice))
+      .send({ title: 'Assigned host permissions', startsAt: new Date().toISOString() })
+      .expect(201);
+    await request(secured)
+      .post(`/api/meetings/${own.body.meeting._id}/start`)
+      .set(auth(alice))
+      .expect(200);
+    const delegated = await request(app)
+      .post(`/api/workspaces/${workspaceId}/meetings`)
+      .set(auth(bob))
+      .send({ title: 'Other host permissions', startsAt: new Date().toISOString() })
+      .expect(201);
+    const denied = await request(secured)
+      .post(`/api/meetings/${delegated.body.meeting._id}/start`)
+      .set(auth(alice))
+      .expect(403);
+    expect(denied.body.error.code).toBe('MFA_REQUIRED');
+    await request(secured)
+      .post(`/api/meetings/${delegated.body.meeting._id}/start`)
+      .set(auth(bob))
+      .expect(200);
+  });
+
   it('starts meeting and gates SFU tokens behind lobby admission', async () => {
     meetingId = await liveMeeting();
     await request(app)
