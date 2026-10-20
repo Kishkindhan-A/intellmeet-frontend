@@ -3,7 +3,10 @@ import type { Config } from './config.js';
 import type { Mailer } from './ports.js';
 import { assert, HttpError } from './lib.js';
 
-export function createMailer(config: Config): Mailer & { close(): void } {
+export function createMailer(
+  config: Config,
+  reportFailure?: (code: string) => void,
+): Mailer & { close(): void } {
   const smtp = config.SMTP_URL
     ? nodemailer.createTransport({
         url: config.SMTP_URL,
@@ -48,8 +51,25 @@ export function createMailer(config: Config): Mailer & { close(): void } {
           'MAIL_UNAVAILABLE',
           'Email could not be delivered. Try again later.',
         );
-      } catch {
-        // Provider errors may include credentials or content. Never expose or log them.
+      } catch (error) {
+        // Only allow known categories into diagnostics, never provider text or recipient data.
+        const providerCode =
+          typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+        const safeCodes = [
+          'EAUTH',
+          'ECONNECTION',
+          'ESOCKET',
+          'ETIMEDOUT',
+          'EDNS',
+          'ETLS',
+          'EENVELOPE',
+          'EMESSAGE',
+        ];
+        reportFailure?.(
+          typeof providerCode === 'string' && safeCodes.includes(providerCode)
+            ? providerCode
+            : 'SMTP_ERROR',
+        );
         throw new HttpError(
           503,
           'MAIL_UNAVAILABLE',

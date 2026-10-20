@@ -19,7 +19,7 @@ export const configSchema = z.object({
   SESSION_DAYS: z.coerce.number().int().min(1).max(30).default(7),
   REQUIRE_EMAIL_VERIFICATION: z
     .enum(['true', 'false'])
-    .default('false')
+    .default('true')
     .transform((value) => value === 'true'),
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
   MAINTENANCE_MODE: z

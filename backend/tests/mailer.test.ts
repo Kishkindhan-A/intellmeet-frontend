@@ -16,6 +16,21 @@ beforeEach(() => {
 });
 
 describe('recipient-specific SMTP delivery', () => {
+  it('reports only allowlisted failure categories without provider credentials or message content', async () => {
+    const report = vi.fn();
+    mocks.send.mockRejectedValueOnce(
+      Object.assign(new Error('private SMTP password'), { code: 'EAUTH' }),
+    );
+    await expect(
+      createMailer(config, report).send('user@example.test', 'Verify', 'private OTP'),
+    ).rejects.toMatchObject({ code: 'MAIL_UNAVAILABLE' });
+    expect(report).toHaveBeenLastCalledWith('EAUTH');
+    mocks.send.mockRejectedValueOnce({ code: 'private-password-in-untrusted-code' });
+    await expect(
+      createMailer(config, report).send('user@example.test', 'Verify', 'private OTP'),
+    ).rejects.toMatchObject({ code: 'MAIL_UNAVAILABLE' });
+    expect(report).toHaveBeenLastCalledWith('SMTP_ERROR');
+  });
   it('sends each provider address to itself without a personal-recipient override', async () => {
     const mail = createMailer(config);
     for (const to of [

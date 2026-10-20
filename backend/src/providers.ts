@@ -62,7 +62,9 @@ export function createRuntime(config: Config) {
   const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1, connectTimeout: 5000 });
   redis.on('error', () => logger.error('Redis connection error'));
   const queue = new Queue(queueName, { connection: redis });
-  const mailer = createMailer(config);
+  const mailer = createMailer(config, (code) =>
+    logger.error({ code }, 'Email provider delivery failed'),
+  );
   const credentials =
     config.S3_ACCESS_KEY_ID && config.S3_SECRET_ACCESS_KEY
       ? { accessKeyId: config.S3_ACCESS_KEY_ID, secretAccessKey: config.S3_SECRET_ACCESS_KEY }

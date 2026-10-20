@@ -22,7 +22,7 @@ const values = {
   APP_URL: origin.origin,
   API_URL: origin.origin,
   CORS_ORIGINS: origin.origin,
-  REQUIRE_EMAIL_VERIFICATION: 'false',
+  REQUIRE_EMAIL_VERIFICATION: 'true',
   REQUIRE_ADMIN_MFA: 'true',
   JWT_SECRET: randomBytes(48).toString('hex'),
   ENCRYPTION_KEY: randomBytes(32).toString('hex'),

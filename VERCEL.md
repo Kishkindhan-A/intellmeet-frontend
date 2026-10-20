@@ -44,9 +44,10 @@ matching values; do not use wildcard credentialed origins.
 
 Required: MONGODB_URI (reachable Atlas/replica set), REDIS_URL (TCP/TLS Redis compatible
 with BullMQ and Socket.IO pub/sub), strong JWT_SECRET, ENCRYPTION_KEY, METRICS_TOKEN,
-REQUIRE_ADMIN_MFA=true and REQUIRE_EMAIL_VERIFICATION=false. Email verification is optional; SMTP_URL and EMAIL_FROM are needed for email-dependent features such as password reset.
+REQUIRE_ADMIN_MFA=true and REQUIRE_EMAIL_VERIFICATION=true. Configure SMTP_URL and EMAIL_FROM for real verification email delivery.
 
-Set REQUIRE_EMAIL_VERIFICATION=false in existing Vercel Production settings and redeploy. New accounts sign in immediately after registration; existing unverified accounts can sign in with their correct password. Email addresses remain unverified in the database.
+Production sign-in requires a verified email address. Signup sends a six-digit OTP and a single-use fallback link. OTPs expire in 10 minutes and are limited to five attempts; accepted resends invalidate earlier codes. Existing unverified accounts must use Resend verification email before signing in. Mail delivery failures do not verify accounts or bypass this requirement.
+
 Current production validation requires real email verification and SMTP; local testing
 without email is not a production configuration. Set TRUST_PROXY_HOPS to the verified
 proxy topology rather than trusting arbitrary forwarded addresses.
