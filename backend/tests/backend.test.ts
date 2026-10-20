@@ -1240,6 +1240,45 @@ describe('real socket transport', () => {
   });
 });
 describe('additional security regression cases', () => {
+  it('denies cross-site fetch metadata without weakening approved origins or API clients', async () => {
+    await request(app).get('/api/auth/config').set('Sec-Fetch-Site', 'cross-site').expect(403);
+    await request(app)
+      .get('/api/auth/config')
+      .set('Sec-Fetch-Site', 'cross-site')
+      .set('Origin', 'http://localhost:5173')
+      .expect(200);
+    await request(app).get('/api/auth/config').expect(200);
+    await request(app).get('/api/auth/config').set('Sec-Fetch-Site', 'same-origin').expect(200);
+  });
+  it('rejects non-JSON mutation bodies before authentication and parsing', async () => {
+    const result = await request(app)
+      .post('/api/auth/login')
+      .set('Content-Type', 'text/plain')
+      .send('{"email":"test@example.test"}')
+      .expect(415);
+    expect(result.body.error.code).toBe('UNSUPPORTED_MEDIA_TYPE');
+  });
+  it('rate limits before parsing malformed JSON and includes retry guidance', async () => {
+    const original = rt.coordinator.consume;
+    rt.coordinator.consume = async () => false;
+    try {
+      const result = await request(app)
+        .post('/api/auth/login')
+        .set('Content-Type', 'application/json')
+        .send('{broken')
+        .expect(429);
+      expect(result.headers['retry-after']).toBe('60');
+    } finally {
+      rt.coordinator.consume = original;
+    }
+  });
+  it('disallows framing API responses and keeps authentication responses private', async () => {
+    const result = await request(app).get('/api/auth/config').expect(200);
+    expect(result.headers['x-frame-options']).toBe('DENY');
+    expect(result.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+    expect(result.headers['cache-control']).toBe('no-store');
+  });
+
   it('rejects Mongo operator injection, malformed JSON and oversized bodies', async () => {
     await request(app)
       .post('/api/auth/login')

@@ -24,7 +24,7 @@
     "test:coverage": "vitest run --coverage",
     "docs:export": "tsx scripts/export-openapi.ts",
     "security:check": "npm audit --audit-level=high && npm run security:secrets && npm run check",
-    "security:secrets": "secretlint \"src/**/*\" \"tests/**/*\" \"scripts/**/*\" \"docs/**/*\" \"*.json\" \"*.yaml\" \"../.github/**/*\"",
+    "security:secrets": "secretlint \"src/**/*\" \"tests/**/*\" \"scripts/**/*\" \"docs/**/*\" \"*.json\" \"*.yaml\" \"../.github/**/*\" \"../frontend/src/**/*\" \"../frontend/public/**/*\" \"../frontend/index.html\" \"../vercel.json\"",
     "validate:deploy": "node scripts/validate-deploy.mjs",
     "local:start": "npm run build && node scripts/local-runtime.mjs",
     "local:stop": "node scripts/local-runtime.mjs --stop",

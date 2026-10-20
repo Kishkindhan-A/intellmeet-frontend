@@ -53,7 +53,13 @@ export function createApp(rt: Runtime) {
       },
     }),
   );
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'same-site' },
+      frameguard: { action: 'deny' },
+      contentSecurityPolicy: { directives: { frameAncestors: ["'none'"] } },
+    }),
+  );
   const origins = rt.config.CORS_ORIGINS.split(',').map((v) => v.trim());
   app.use(
     cors({
@@ -116,21 +122,31 @@ export function createApp(rt: Runtime) {
     }
     next();
   });
-  app.use(express.json({ limit: '150kb', strict: true }));
-  app.use(cookieParser());
-  app.use('/api', async (req, _res, next) => {
-    try {
-      assert(
-        await rt.coordinator.consume(`http:${req.ip}`, 600, 60),
-        429,
-        'RATE_LIMITED',
-        'Request limit exceeded',
+  app.use('/api', (req, _res, next) => {
+    // Fetch metadata supplements CSRF tokens; approved separate frontend origins remain supported.
+    if (req.get('Sec-Fetch-Site') === 'cross-site' && !origins.includes(req.get('Origin') || ''))
+      return next(new HttpError(403, 'CROSS_SITE_DENIED', 'Cross-site API request denied'));
+    const hasBody =
+      Number(req.get('Content-Length') || 0) > 0 || Boolean(req.get('Transfer-Encoding'));
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && hasBody && !req.is('application/json'))
+      return next(
+        new HttpError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Use application/json for API requests'),
       );
+    next();
+  });
+  // Apply the shared quota before parsing attacker-controlled JSON.
+  app.use('/api', async (req, res, next) => {
+    try {
+      const allowed = await rt.coordinator.consume(`http:${req.ip}`, 600, 60);
+      if (!allowed) res.setHeader('Retry-After', '60');
+      assert(allowed, 429, 'RATE_LIMITED', 'Request limit exceeded');
       next();
     } catch (err) {
       next(err);
     }
   });
+  app.use(express.json({ limit: '150kb', strict: true }));
+  app.use(cookieParser());
   app.use('/api/auth', authRoutes(rt));
   app.use('/api/account', accountRoutes(rt));
   app.use('/api', workspaceRoutes(rt), meetingRoutes(rt), assetRoutes(rt), collaborationRoutes(rt));
