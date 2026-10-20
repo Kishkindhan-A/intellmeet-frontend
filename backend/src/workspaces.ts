@@ -127,7 +127,7 @@ export function workspaceRoutes(rt: Runtime) {
     await rt.mail.send(
       input.email,
       'IntellMeet workspace invitation',
-      `You have been invited to ${workspace!.name}. Sign in with ${input.email} and open ${rt.config.APP_URL}/invitations/accept#token=${raw}`,
+      `You have been invited to ${workspace!.name}. Sign in with ${input.email} and open ${rt.config.APP_URL}/invite#token=${raw}`,
     );
     await audit(req, 'workspace.invited', invite._id, workspaceId);
     res.status(201).json({

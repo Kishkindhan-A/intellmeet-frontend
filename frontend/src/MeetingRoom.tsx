@@ -108,9 +108,15 @@ export function MeetingRoom({
     if (meeting.status !== 'live' || !admitted) return;
     const socket = io(import.meta.env.VITE_SOCKET_URL || location.origin, {
       transports: ['websocket'],
+      addTrailingSlash: false,
       auth: { token: getAccessToken() },
     });
     socket.on('connect', () => {
+      setInfo((current) =>
+        current === 'Live updates unavailable. Meeting data is refreshed periodically.'
+          ? ''
+          : current,
+      );
       socket.emit(
         'meeting.subscribe',
         { meetingId: meeting._id },

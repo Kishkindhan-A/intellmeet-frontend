@@ -32,6 +32,26 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('frontend session client', () => {
+  it('reports a timed-out mutation without retrying it or clearing the session', async () => {
+    const client = await import('../../frontend/src/api');
+    client.setSession({ accessToken: 'unit-access', csrfToken: 'unit-csrf' });
+    fetchMock.mockRejectedValue(new DOMException('signal timed out', 'TimeoutError'));
+    await expect(client.api('/meetings/unit/join', 'POST', {})).rejects.toMatchObject({
+      code: 'REQUEST_TIMEOUT',
+      message: expect.stringContaining('check whether your change was saved'),
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(client.getAccessToken()).toBe('unit-access');
+  });
+  it('reports network failure without leaking the browser error or retrying', async () => {
+    const client = await import('../../frontend/src/api');
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch private URL'));
+    await expect(client.api('/auth/config')).rejects.toMatchObject({
+      code: 'NETWORK_ERROR',
+      message: 'Unable to reach the server. Check your connection and try again.',
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
   it('rejects an HTML fallback instead of treating it as successful API data', async () => {
     const client = await import('../../frontend/src/api');
     fetchMock.mockResolvedValue(new Response('<html>SPA fallback</html>', { status: 200 }));
@@ -114,7 +134,7 @@ describe('frontend session client', () => {
       code: 'INVALID_CREDENTIALS',
     });
     fetchMock.mockRejectedValueOnce(new TypeError('Network unavailable'));
-    await expect(client.api('/auth/me')).rejects.toThrow('Network unavailable');
+    await expect(client.api('/auth/me')).rejects.toThrow('Unable to reach the server');
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(client.getAccessToken()).toBe('unit-access');
     expect(posted).toEqual([]);

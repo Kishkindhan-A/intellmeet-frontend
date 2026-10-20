@@ -42,13 +42,28 @@ async function raw<T>(path: string, method = 'GET', body?: unknown): Promise<T> 
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   if (method !== 'GET' && csrfToken) headers['X-CSRF-Token'] = csrfToken;
-  const r = await fetch(base + path, {
-    method,
-    headers,
-    credentials: 'include',
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(20000),
-  });
+  let r: Response;
+  try {
+    r = await fetch(base + path, {
+      method,
+      headers,
+      credentials: 'include',
+      body: body === undefined ? undefined : JSON.stringify(body),
+      // A newly started deployment can take longer than the old 20-second deadline.
+      signal: AbortSignal.timeout(45000),
+    });
+  } catch (error) {
+    const timeout = error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name);
+    throw new ApiError(
+      0,
+      timeout ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
+      timeout
+        ? method === 'GET'
+          ? 'The server took too long to respond. Please try again.'
+          : 'The request took too long. Refresh to check whether your change was saved before trying again.'
+        : 'Unable to reach the server. Check your connection and try again.',
+    );
+  }
   const data = r.status === 204 ? null : await r.json().catch(() => null);
   if (!r.ok)
     throw new ApiError(

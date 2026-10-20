@@ -540,7 +540,19 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
             <SettingsPage
               user={user}
               workspace={workspace}
-              onUserChange={onUserChange}
+              onUserChange={(nextUser) => {
+                onUserChange(nextUser);
+                setMembers((current) =>
+                  current.map((member) =>
+                    member.userId === nextUser.id && member.user
+                      ? {
+                          ...member,
+                          user: { ...member.user, name: nextUser.name, email: nextUser.email },
+                        }
+                      : member,
+                  ),
+                );
+              }}
               update={() => void loadWorkspaces()}
             />
           ) : loading ? (

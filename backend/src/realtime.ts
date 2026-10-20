@@ -15,6 +15,7 @@ export async function attachRealtime(server: HttpServer, rt: Runtime, redis?: Re
   const origins = rt.config.CORS_ORIGINS.split(',').map((v) => v.trim());
   const io = new Server(server, {
     transports: ['websocket'],
+    addTrailingSlash: false,
     maxHttpBufferSize: 128000,
     cors: { origin: origins, credentials: true },
     allowRequest: (req, cb) =>

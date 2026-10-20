@@ -776,6 +776,9 @@ describe('identity and workspace boundaries', () => {
       .set(auth(alice))
       .send({ email: bob.email })
       .expect(201);
+    expect(mails.findLast((m) => m.to === bob.email)!.text).toContain(
+      `${config.APP_URL}/invite#token=`,
+    );
     const raw = mails.findLast((m) => m.to === bob.email)!.text.match(/#token=([^\s]+)/)![1];
     await request(app)
       .post('/api/invitations/accept')
@@ -1200,6 +1203,7 @@ describe('real socket transport', () => {
     const address = server.address() as { port: number };
     const socket = connectSocket(`http://127.0.0.1:${address.port}`, {
       transports: ['websocket'],
+      addTrailingSlash: false,
       auth: { token: bob.access },
       reconnection: false,
     });
