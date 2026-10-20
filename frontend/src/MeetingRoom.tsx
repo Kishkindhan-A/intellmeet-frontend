@@ -441,7 +441,7 @@ export function MeetingRoom({
                 <p className="muted" role="status">
                   {noteLoaded
                     ? `Capture ideas together. Revision ${note.revision}.`
-                    : 'Loading shared notes�'}
+                    : 'Loading shared notes...'}
                 </p>
                 <textarea
                   className="notes-editor"

@@ -1,4 +1,4 @@
-# Production website audit — 20 October 2026
+# Production website audit â€” 20 October 2026
 
 Target: https://intellmeet-frontend-rust.vercel.app
 
