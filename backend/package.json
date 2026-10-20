@@ -43,7 +43,7 @@
     "@socket.io/redis-adapter": "^8.3.0",
     "@socket.io/redis-emitter": "^5.1.0",
     "argon2": "^0.45.1",
-    "bullmq": "^6.3.12",
+    "bullmq": "^6.3.16",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
