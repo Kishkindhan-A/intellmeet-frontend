@@ -37,6 +37,18 @@ export function setSession(s: { accessToken: string; csrfToken: string }) {
   accessToken = s.accessToken;
   csrfToken = s.csrfToken;
 }
+function transportError(error: unknown, method: string) {
+  const timeout = error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name);
+  return new ApiError(
+    0,
+    timeout ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
+    timeout
+      ? method === 'GET'
+        ? 'The server took too long to respond. Please try again.'
+        : 'The request took too long. Refresh to check whether your change was saved before trying again.'
+      : 'Unable to reach the server. Check your connection and try again.',
+  );
+}
 async function raw<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
@@ -53,18 +65,16 @@ async function raw<T>(path: string, method = 'GET', body?: unknown): Promise<T> 
       signal: AbortSignal.timeout(45000),
     });
   } catch (error) {
-    const timeout = error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name);
-    throw new ApiError(
-      0,
-      timeout ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
-      timeout
-        ? method === 'GET'
-          ? 'The server took too long to respond. Please try again.'
-          : 'The request took too long. Refresh to check whether your change was saved before trying again.'
-        : 'Unable to reach the server. Check your connection and try again.',
-    );
+    throw transportError(error, method);
   }
-  const data = r.status === 204 ? null : await r.json().catch(() => null);
+  let data: any = null;
+  if (r.status !== 204) {
+    try {
+      data = await r.json();
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw transportError(error, method);
+    }
+  }
   if (!r.ok)
     throw new ApiError(
       r.status,

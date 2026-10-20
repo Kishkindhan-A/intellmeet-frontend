@@ -76,6 +76,10 @@ export async function audit(
   });
 }
 export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
+  if (res.headersSent) {
+    _next(err);
+    return;
+  }
   if (err instanceof z.ZodError) {
     res.status(400).json({
       error: {
@@ -87,6 +91,15 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     });
     return;
   }
+  const dependencyUnavailable =
+    err instanceof Error &&
+    [
+      'MongoServerSelectionError',
+      'MongooseServerSelectionError',
+      'MongoNetworkError',
+      'MongoNetworkTimeoutError',
+      'MaxRetriesPerRequestError',
+    ].includes(err.name);
   const duplicate = typeof err === 'object' && err !== null && 'code' in err && err.code === 11000;
   const malformed =
     typeof err === 'object' && err !== null && 'type' in err && err.type === 'entity.parse.failed';
@@ -101,10 +114,20 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
           ? 400
           : tooLarge
             ? 413
-            : 500;
+            : dependencyUnavailable
+              ? 503
+              : 500;
+  if (dependencyUnavailable) res.setHeader('Retry-After', '5');
   if (status >= 500)
     req.log?.error(
-      { err: err instanceof Error ? { name: err.name, message: err.message } : 'unknown' },
+      {
+        code: dependencyUnavailable
+          ? 'DEPENDENCY_UNAVAILABLE'
+          : err instanceof HttpError
+            ? err.code
+            : 'INTERNAL_ERROR',
+        requestId: req.id,
+      },
       'Request failed',
     );
   res.status(status).json({
@@ -118,7 +141,9 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
               ? 'INVALID_JSON'
               : tooLarge
                 ? 'PAYLOAD_TOO_LARGE'
-                : 'INTERNAL_ERROR',
+                : dependencyUnavailable
+                  ? 'DEPENDENCY_UNAVAILABLE'
+                  : 'INTERNAL_ERROR',
       message:
         err instanceof HttpError
           ? err.message
@@ -128,7 +153,9 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
               ? 'Malformed JSON'
               : tooLarge
                 ? 'Request body exceeds the limit'
-                : 'Request could not be completed',
+                : dependencyUnavailable
+                  ? 'A required service is temporarily unavailable. Please try again shortly.'
+                  : 'Request could not be completed',
     },
     requestId: req.id,
   });

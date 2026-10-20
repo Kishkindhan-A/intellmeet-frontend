@@ -32,6 +32,22 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('frontend session client', () => {
+  it('keeps a response-body timeout distinct from malformed JSON without retrying the write', async () => {
+    const client = await import('../../frontend/src/api');
+    client.setSession({ accessToken: 'unit-access', csrfToken: 'unit-csrf' });
+    fetchMock.mockResolvedValue({
+      status: 200,
+      ok: true,
+      json: async () => {
+        throw new DOMException('body timeout', 'TimeoutError');
+      },
+    });
+    await expect(
+      client.api('/meetings/unit/notes', 'PUT', { text: 'draft', revision: 1 }),
+    ).rejects.toMatchObject({ code: 'REQUEST_TIMEOUT' });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(client.getAccessToken()).toBe('unit-access');
+  });
   it('reports a timed-out mutation without retrying it or clearing the session', async () => {
     const client = await import('../../frontend/src/api');
     client.setSession({ accessToken: 'unit-access', csrfToken: 'unit-csrf' });

@@ -413,3 +413,18 @@ dialog::backdrop {
     transition: none !important;
   }
 }
+
+.error-recovery {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.error-recovery > section {
+  max-width: 540px;
+  padding: 32px;
+}
+.error-recovery p {
+  line-height: 1.7;
+  margin-bottom: 24px;
+}

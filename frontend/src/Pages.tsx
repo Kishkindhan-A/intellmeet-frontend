@@ -14,7 +14,7 @@ export function SettingsPage({
 }: {
   user: User;
   workspace?: Workspace;
-  update: () => void;
+  update: () => Promise<void>;
   onUserChange: (user: User) => void;
 }) {
   const [error, setError] = useState('');
@@ -42,7 +42,13 @@ export function SettingsPage({
       );
       if (result.user) onUserChange(result.user);
       setNotice('Settings saved.');
-      update();
+      try {
+        await update();
+      } catch {
+        setError(
+          'Your settings were saved, but the workspace could not refresh. Reload the page to see the latest changes.',
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to save');
     } finally {

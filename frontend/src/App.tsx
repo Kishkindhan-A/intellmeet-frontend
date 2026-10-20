@@ -553,7 +553,7 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
                   ),
                 );
               }}
-              update={() => void loadWorkspaces()}
+              update={loadWorkspaces}
             />
           ) : loading ? (
             <Loading />
