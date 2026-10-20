@@ -1,2 +1,3 @@
 .vercel/
 .vite/
+node_modules/

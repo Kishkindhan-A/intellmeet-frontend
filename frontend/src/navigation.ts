@@ -25,3 +25,15 @@ export function navigate(path: string, replace = false) {
   else history.pushState(null, '', path);
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
+
+export function signedInDestination(next: string | null): string {
+  if (next === 'profile') return '/profile';
+  if (!next?.startsWith('/') || next.startsWith('//')) return '/workspace/overview';
+  const target = new URL(next, location.origin);
+  if (
+    target.origin !== location.origin ||
+    !/^\/(workspace(?:\/|$)|profile$|settings$)/.test(target.pathname)
+  )
+    return '/workspace/overview';
+  return target.pathname + target.search;
+}

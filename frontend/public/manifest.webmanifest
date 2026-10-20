@@ -1,0 +1,35 @@
+{
+  "id": "/",
+  "name": "IntellMeet",
+  "short_name": "IntellMeet",
+  "description": "Meetings, collaboration, and clear next steps.",
+  "start_url": "/workspace/overview",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8f7f2",
+  "theme_color": "#26392c",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Meetings",
+      "url": "/workspace/meetings"
+    },
+    {
+      "name": "Action items",
+      "url": "/workspace/tasks"
+    }
+  ]
+}

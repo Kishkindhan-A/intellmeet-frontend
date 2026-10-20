@@ -8,12 +8,14 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
+import { BrowserIntegration } from './BrowserIntegration';
 import { BrowserPreferenceEffects } from './BrowserPreferences';
 import { ErrorBoundary } from './ErrorBoundary';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserPreferenceEffects />
+    <BrowserIntegration />
     <ErrorBoundary>
       <App />
     </ErrorBoundary>

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { navigate } from '../../frontend/src/navigation';
+import { navigate, signedInDestination } from '../../frontend/src/navigation';
 let address: URL;
 let pushes: ReturnType<typeof vi.fn>;
 let replacements: ReturnType<typeof vi.fn>;
@@ -40,4 +40,12 @@ it('supports replacing a route without adding an extra Back step', () => {
 it('rejects navigation to another origin without changing browser history', () => {
   expect(() => navigate('https://other.example/workspace')).toThrow('Navigation must stay');
   expect(pushes).not.toHaveBeenCalled();
+});
+
+it('preserves workspace deep links after sign-in while rejecting external redirects', () => {
+  expect(signedInDestination('/workspace/meetings?workspace=team&meeting=room')).toBe(
+    '/workspace/meetings?workspace=team&meeting=room',
+  );
+  expect(signedInDestination('//other.example/workspace')).toBe('/workspace/overview');
+  expect(signedInDestination('/login?next=evil')).toBe('/workspace/overview');
 });

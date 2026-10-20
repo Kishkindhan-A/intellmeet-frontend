@@ -34,9 +34,10 @@ import './Signature.css';
 import './WorkspacePolish.css';
 import { SignalMark, MeetingSpotlight } from './Brand';
 import { WorkspaceSearch, GettingStarted, WeekAgenda } from './WorkspaceExperience';
+import { DesktopAlerts } from './BrowserIntegration';
 import { ShortcutList } from './BrowserPreferences';
 import { shortcutsEnabled } from './browserPreferenceStore';
-import { navigate, useBrowserLocation, usePathname } from './navigation';
+import { navigate, signedInDestination, useBrowserLocation, usePathname } from './navigation';
 
 const authPaths = [
   '/login',
@@ -61,7 +62,7 @@ export default function App() {
   const signedInId = user?.id;
   useEffect(() => {
     if (!boot && !user && path !== '/' && path !== '/invite' && !authPaths.includes(path)) {
-      navigate(['/profile', '/settings'].includes(path) ? '/login?next=profile' : '/login', true);
+      navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`, true);
     }
   }, [boot, user, path]);
   useEffect(() => {
@@ -131,17 +132,17 @@ export default function App() {
             setError('');
             setUser(nextUser);
             if (location.pathname !== '/invite')
-              navigate(
-                new URLSearchParams(location.search).get('next') === 'profile'
-                  ? '/profile'
-                  : '/workspace',
-                true,
-              );
+              navigate(signedInDestination(new URLSearchParams(location.search).get('next')), true);
           }}
         />
       </>
     );
-  return <WorkspaceApp user={user} onUserChange={setUser} />;
+  return (
+    <>
+      <DesktopAlerts userId={user.id} />
+      <WorkspaceApp user={user} onUserChange={setUser} />
+    </>
+  );
 }
 function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user: User) => void }) {
   const browserLocation = useBrowserLocation();

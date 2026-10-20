@@ -469,3 +469,43 @@ dialog::backdrop {
     scroll-behavior: auto !important;
   }
 }
+
+.browser-tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.browser-tools [role='status'] {
+  flex-basis: 100%;
+  font-size: 13px;
+}
+
+@media print {
+  .sidebar,
+  .browser-tools,
+  .connection-banner,
+  .skip-link,
+  .topbar,
+  dialog,
+  .room-shell video,
+  .room-shell audio,
+  .lk-control-bar {
+    display: none !important;
+  }
+  .app-shell,
+  .main-area,
+  .room-shell {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  button,
+  input[type='password'] {
+    display: none !important;
+  }
+  .panel {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+}

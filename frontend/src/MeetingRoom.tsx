@@ -1,3 +1,5 @@
+import { noteDrafts } from './noteDrafts';
+import { BrowserTools } from './BrowserIntegration';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
@@ -47,13 +49,28 @@ export function MeetingRoom({
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
-  const [note, setNote] = useState({ text: '', revision: 0 });
+  const draftKey = `${user.id}:${initial._id}`;
+  const cachedDraft = noteDrafts.get(draftKey);
+  const [note, setNote] = useState({ text: '', revision: cachedDraft?.revision || 0 });
   const [noteLoaded, setNoteLoaded] = useState(false);
-  const [draft, setDraft] = useState('');
-  const [dirty, setDirty] = useState(false);
-  const dirtyRef = useRef(false);
+  const [draft, setDraft] = useState(cachedDraft?.text || '');
+  const [dirty, setDirty] = useState(!!cachedDraft);
+  const dirtyRef = useRef(!!cachedDraft);
+  useEffect(() => {
+    if (dirty) noteDrafts.set(draftKey, { text: draft, revision: note.revision });
+    else noteDrafts.delete(draftKey);
+  }, [dirty, draft, note.revision, draftKey]);
   useEffect(() => {
     dirtyRef.current = dirty;
+  }, [dirty]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [segments, setSegments] = useState<
@@ -199,6 +216,7 @@ export function MeetingRoom({
   return (
     <main className="room-shell">
       <header className="room-header">
+        <BrowserTools />
         <button
           className="secondary compact"
           onClick={async () => {

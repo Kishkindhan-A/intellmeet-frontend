@@ -1,5 +1,15 @@
-export type Preferences = { shortcuts: boolean; reducedMotion: boolean; compact: boolean };
-export const defaults: Preferences = { shortcuts: true, reducedMotion: false, compact: false };
+export type Preferences = {
+  shortcuts: boolean;
+  reducedMotion: boolean;
+  compact: boolean;
+  desktopAlerts: boolean;
+};
+export const defaults: Preferences = {
+  shortcuts: true,
+  reducedMotion: false,
+  compact: false,
+  desktopAlerts: false,
+};
 const key = 'intellmeet.browser-preferences.v1';
 let current = defaults;
 export let storageAvailable = true;
@@ -31,3 +41,17 @@ export function update(next: Preferences) {
   }
   listeners.forEach((listener) => listener());
 }
+
+window.addEventListener('storage', (event) => {
+  if (event.key !== key && event.key !== null) return;
+  try {
+    const saved = JSON.parse(event.newValue || '{}');
+    current = { ...defaults };
+    for (const name of Object.keys(defaults) as (keyof Preferences)[]) {
+      if (typeof saved?.[name] === 'boolean') current[name] = saved[name];
+    }
+    listeners.forEach((listener) => listener());
+  } catch {
+    /* Ignore malformed values from another tab. */
+  }
+});
