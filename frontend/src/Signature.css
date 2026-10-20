@@ -66,20 +66,20 @@ body {
 .nav-label {
   color: #a1b09a;
 }
-.sidebar nav button {
+.sidebar nav :is(button, a) {
   color: #bcc7b8;
   min-height: 46px;
   font-size: 13px;
 }
-.sidebar nav button.active {
+.sidebar nav :is(button, a).active {
   background: #d6ec8b;
   color: #24311d;
   font-weight: 600;
 }
-.sidebar nav button.active:hover {
+.sidebar nav :is(button, a).active:hover {
   background: #e1f2a7;
 }
-.sidebar nav button.active:before {
+.sidebar nav :is(button, a).active:before {
   display: none;
 }
 .sidebar .nav-count {

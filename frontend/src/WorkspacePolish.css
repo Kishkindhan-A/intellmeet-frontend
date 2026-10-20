@@ -60,18 +60,18 @@
   font-size: 9px;
   margin-top: 27px;
 }
-.sidebar nav button {
+.sidebar nav :is(button, a) {
   border-radius: 8px;
   margin-bottom: 4px;
   transition:
     background 0.18s,
     transform 0.18s;
 }
-.sidebar nav button.active {
+.sidebar nav :is(button, a).active {
   background: #d8ed9a;
   color: #243a2b;
 }
-.sidebar nav button:not(.active):hover {
+.sidebar nav :is(button, a):not(.active):hover {
   background: #ffffff0c;
   transform: translateX(2px);
 }
@@ -587,7 +587,7 @@ dialog::backdrop {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sidebar nav button,
+  .sidebar nav :is(button, a),
   .stat-card,
   .meeting-card,
   .app-shell .primary,

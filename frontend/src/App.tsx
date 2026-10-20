@@ -36,7 +36,7 @@ import { SignalMark, MeetingSpotlight } from './Brand';
 import { WorkspaceSearch, GettingStarted, WeekAgenda } from './WorkspaceExperience';
 import { ShortcutList } from './BrowserPreferences';
 import { shortcutsEnabled } from './browserPreferenceStore';
-import { navigate, usePathname } from './navigation';
+import { navigate, useBrowserLocation, usePathname } from './navigation';
 
 const authPaths = [
   '/login',
@@ -144,9 +144,20 @@ export default function App() {
   return <WorkspaceApp user={user} onUserChange={setUser} />;
 }
 function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user: User) => void }) {
-  const [page, setPage] = useState<Page>(() =>
-    ['/profile', '/settings'].includes(location.pathname) ? 'settings' : 'overview',
-  );
+  const browserLocation = useBrowserLocation();
+  const route = new URL(browserLocation, location.origin);
+  const routePage = route.pathname.split('/')[2];
+  const page: Page = ['/profile', '/settings'].includes(route.pathname)
+    ? 'settings'
+    : ['overview', 'meetings', 'tasks', 'team', 'settings', 'help', 'notifications'].includes(
+          routePage,
+        )
+      ? (routePage as Page)
+      : 'overview';
+  const setPage = useCallback((next: Page) => {
+    const workspace = new URLSearchParams(location.search).get('workspace');
+    navigate(`/workspace/${next}${workspace ? `?workspace=${encodeURIComponent(workspace)}` : ''}`);
+  }, []);
   const [today] = useState(() => new Date());
   const [defaultStart] = useState(() =>
     new Date(Date.now() + 3600000 - new Date().getTimezoneOffset() * 60000)
@@ -154,7 +165,11 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
       .slice(0, 16),
   );
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [workspaceId, setWorkspaceId] = useState('');
+  const [fallbackWorkspaceId, setWorkspaceId] = useState('');
+  const requestedWorkspace = route.searchParams.get('workspace');
+  const workspaceId = workspaces.some((entry) => entry._id === requestedWorkspace)
+    ? requestedWorkspace!
+    : fallbackWorkspaceId;
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -162,7 +177,47 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [modal, setModal] = useState<'workspace' | 'meeting' | 'task' | 'invite' | null>(null);
-  const [room, setRoom] = useState<Meeting | null>(null);
+  const [openedRoom, cacheRoom] = useState<Meeting | null>(null);
+  const [roomError, setRoomError] = useState('');
+  const roomId = route.searchParams.get('meeting');
+  const room = roomId
+    ? meetings.find((meeting) => meeting._id === roomId) ||
+      (openedRoom?._id === roomId ? openedRoom : null)
+    : null;
+  useEffect(() => {
+    if (!roomId) return;
+    let active = true;
+    api<{ meeting: Meeting }>(`/meetings/${encodeURIComponent(roomId)}`)
+      .then((result) => {
+        if (active) {
+          cacheRoom(result.meeting);
+          setRoomError('');
+        }
+      })
+      .catch((error) => {
+        if (active)
+          setRoomError(error instanceof Error ? error.message : 'Unable to open this meeting');
+      });
+    return () => {
+      active = false;
+    };
+  }, [roomId]);
+  const setRoom = useCallback(
+    (meeting: Meeting | null) => {
+      if (meeting) cacheRoom(meeting);
+      const params = new URLSearchParams(location.search);
+      if (meeting) {
+        params.set('meeting', meeting._id);
+        params.set('workspace', workspaceId);
+      } else params.delete('meeting');
+      navigate(`${location.pathname}${params.size ? `?${params}` : ''}`);
+    },
+    [workspaceId, cacheRoom],
+  );
+  const roomTitle = room?.title;
+  useEffect(() => {
+    document.title = `${roomTitle || { overview: 'Overview', meetings: 'Meetings', tasks: 'Action items', team: 'Your team', settings: 'Settings', help: 'Help', notifications: 'Notifications' }[page]} | IntellMeet`;
+  }, [page, roomTitle]);
   const [query, setQuery] = useState('');
   const [mobile, setMobile] = useState(false);
   const [filter, setFilter] = useState('all');
@@ -170,6 +225,16 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
   const [searchOpen, setSearchOpen] = useState(false);
   const showSearch = useCallback(() => setSearchOpen(true), []);
   const [shortcutHelp, setShortcutHelp] = useState(false);
+  useEffect(() => {
+    const resetTransientUi = () => {
+      setMobile(false);
+      setSearchOpen(false);
+      setShortcutHelp(false);
+      setModal(null);
+    };
+    window.addEventListener('popstate', resetTransientUi);
+    return () => window.removeEventListener('popstate', resetTransientUi);
+  }, []);
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       const target = event.target;
@@ -222,16 +287,20 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [room, modal, searchOpen, shortcutHelp, showSearch]);
+  }, [room, modal, searchOpen, shortcutHelp, showSearch, setPage]);
   const workspace = workspaces.find((w) => w._id === workspaceId);
   const admin = workspace?.role !== 'member';
   const loadWorkspaces = useCallback(async () => {
     const r = await api<{ workspaces: Workspace[] }>('/workspaces');
     setWorkspaces(r.workspaces);
     setWorkspaceId((current) =>
-      r.workspaces.some((w) => w._id === current) ? current : r.workspaces[0]?._id || '',
+      r.workspaces.some((w) => w._id === new URLSearchParams(location.search).get('workspace'))
+        ? new URLSearchParams(location.search).get('workspace')!
+        : r.workspaces.some((w) => w._id === current)
+          ? current
+          : r.workspaces[0]?._id || '',
     );
-  }, []);
+  }, [setWorkspaces, setWorkspaceId]);
   useEffect(() => {
     loadWorkspaces()
       .catch((e) => setError(e.message))
@@ -247,7 +316,7 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
     setMeetings(m.meetings);
     setTasks(t.tasks);
     setMembers(p.members);
-  }, [workspaceId]);
+  }, [workspaceId, setMeetings, setTasks, setMembers]);
   useEffect(() => {
     setMeetings([]);
     setTasks([]);
@@ -273,7 +342,7 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
         setBusy(false);
       }
     },
-    [reload],
+    [reload, setError, setBusy, setNotice],
   );
   useEffect(() => {
     const token = new URLSearchParams(location.hash.slice(1)).get('token');
@@ -297,6 +366,7 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
         });
         await loadWorkspaces();
         setWorkspaceId(r.workspace._id);
+        navigate(`/workspace/overview?workspace=${encodeURIComponent(r.workspace._id)}`);
       } else if (modal === 'meeting') {
         const r = await api<{ meeting: Meeting }>(`/workspaces/${workspaceId}/meetings`, 'POST', {
           title: d.get('title'),
@@ -345,6 +415,16 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
     .filter((m) => m.status === 'live' || m.status === 'scheduled')
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
   const openTasks = tasks.filter((t) => t.status !== 'done');
+  if (roomId && !room && !roomError) return <Loading />;
+  if (roomId && !room && roomError)
+    return (
+      <div className="error-recovery">
+        <ErrorBox message={roomError} />
+        <button className="primary" onClick={() => setRoom(null)}>
+          Back to workspace
+        </button>
+      </div>
+    );
   if (room && workspace)
     return (
       <Suspense fallback={<Loading />}>
@@ -393,7 +473,10 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
             <select
               aria-label="Current workspace"
               value={workspaceId}
-              onChange={(e) => setWorkspaceId(e.target.value)}
+              onChange={(e) => {
+                setWorkspaceId(e.target.value);
+                navigate(`/workspace/${page}?workspace=${encodeURIComponent(e.target.value)}`);
+              }}
             >
               {!workspaces.length && <option value="">No workspace yet</option>}
               {workspaces.map((w) => (
@@ -412,12 +495,23 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
         <span className="nav-label">YOUR WORKSPACE</span>
         <nav>
           {nav.map((n) => (
-            <button
+            <a
+              href={`/workspace/${n.id}${workspaceId ? `?workspace=${encodeURIComponent(workspaceId)}` : ''}`}
               key={n.id}
               className={page === n.id ? 'active' : ''}
               aria-current={page === n.id ? 'page' : undefined}
-              onClick={() => {
-                setPage(n.id);
+              onClick={(event) => {
+                if (
+                  event.ctrlKey ||
+                  event.metaKey ||
+                  event.shiftKey ||
+                  event.altKey ||
+                  event.button !== 0
+                )
+                  return;
+                event.preventDefault();
+                navigate(event.currentTarget.href);
+
                 setMobile(false);
                 setQuery('');
                 setFilter('all');
@@ -428,7 +522,7 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
               {n.id === 'tasks' && openTasks.length > 0 && (
                 <span className="nav-count">{openTasks.length}</span>
               )}
-            </button>
+            </a>
           ))}
         </nav>
         <div className="sidebar-bottom">
@@ -442,17 +536,44 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
             </span>
           </div>
           <nav>
-            <button
+            <a
+              href={`/workspace/settings${workspaceId ? `?workspace=${encodeURIComponent(workspaceId)}` : ''}`}
               className={page === 'settings' ? 'active' : ''}
-              onClick={() => setPage('settings')}
+              onClick={(event) => {
+                if (
+                  event.ctrlKey ||
+                  event.metaKey ||
+                  event.shiftKey ||
+                  event.altKey ||
+                  event.button !== 0
+                )
+                  return;
+                event.preventDefault();
+                navigate(event.currentTarget.href);
+              }}
             >
               <Settings size={18} />
               Settings
-            </button>
-            <button className={page === 'help' ? 'active' : ''} onClick={() => setPage('help')}>
+            </a>
+            <a
+              href={`/workspace/help${workspaceId ? `?workspace=${encodeURIComponent(workspaceId)}` : ''}`}
+              className={page === 'help' ? 'active' : ''}
+              onClick={(event) => {
+                if (
+                  event.ctrlKey ||
+                  event.metaKey ||
+                  event.shiftKey ||
+                  event.altKey ||
+                  event.button !== 0
+                )
+                  return;
+                event.preventDefault();
+                navigate(event.currentTarget.href);
+              }}
+            >
               <HelpCircle size={18} />
               Help & support
-            </button>
+            </a>
           </nav>
           <div className="profile">
             <span className="avatar">{user.name.charAt(0)}</span>

@@ -348,7 +348,7 @@
   flex-direction: column;
   gap: 6px;
 }
-.sidebar nav button {
+.sidebar nav :is(button, a) {
   background: transparent;
   border: 0;
   display: flex;
@@ -361,14 +361,14 @@
   border-radius: 7px;
   position: relative;
 }
-.sidebar nav button.active {
+.sidebar nav :is(button, a).active {
   background: #284842;
   color: #c8f1de;
 }
-.sidebar nav button:hover {
+.sidebar nav :is(button, a):hover {
   background: #ffffff08;
 }
-.sidebar nav button.active:before {
+.sidebar nav :is(button, a).active:before {
   content: '';
   position: absolute;
   left: -20px;
