@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { BrowserPreferences } from './BrowserPreferences';
 import { Bell, HelpCircle } from 'lucide-react';
 import { api, clearSession } from './api';
 import { navigate } from './navigation';
@@ -182,6 +183,7 @@ export function SettingsPage({
             </form>
           )}
         </section>
+        <BrowserPreferences />
         <AccountSecurity />
       </div>
     </>

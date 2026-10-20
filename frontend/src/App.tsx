@@ -34,7 +34,8 @@ import './Signature.css';
 import './WorkspacePolish.css';
 import { SignalMark, MeetingSpotlight } from './Brand';
 import { WorkspaceSearch, GettingStarted, WeekAgenda } from './WorkspaceExperience';
-import { useSearchShortcut } from './useSearchShortcut';
+import { ShortcutList } from './BrowserPreferences';
+import { shortcutsEnabled } from './browserPreferenceStore';
 import { navigate, usePathname } from './navigation';
 
 const authPaths = [
@@ -168,7 +169,60 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
   const [busy, setBusy] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const showSearch = useCallback(() => setSearchOpen(true), []);
-  useSearchShortcut(showSearch);
+  const [shortcutHelp, setShortcutHelp] = useState(false);
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        !shortcutsEnabled() ||
+        event.defaultPrevented ||
+        event.repeat ||
+        event.isComposing ||
+        room ||
+        modal ||
+        searchOpen ||
+        shortcutHelp ||
+        document.querySelector('dialog[open]')
+      )
+        return;
+      if (
+        target instanceof Element &&
+        target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+      )
+        return;
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === 'k'
+      ) {
+        event.preventDefault();
+        showSearch();
+        return;
+      }
+      if (event.key === '?' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        setShortcutHelp(true);
+        return;
+      }
+      if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey) return;
+      const destination: Partial<Record<string, Page>> = {
+        Digit1: 'overview',
+        Digit2: 'meetings',
+        Digit3: 'tasks',
+        Digit4: 'team',
+        KeyS: 'settings',
+      };
+      const next = destination[event.code];
+      if (next) {
+        event.preventDefault();
+        setPage(next);
+        setMobile(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [room, modal, searchOpen, shortcutHelp, showSearch]);
   const workspace = workspaces.find((w) => w._id === workspaceId);
   const admin = workspace?.role !== 'member';
   const loadWorkspaces = useCallback(async () => {
@@ -846,6 +900,11 @@ function WorkspaceApp({ user, onUserChange }: { user: User; onUserChange: (user:
           </footer>
         </main>
       </div>
+      {shortcutHelp && (
+        <Modal title="Keyboard shortcuts" close={() => setShortcutHelp(false)}>
+          <ShortcutList />
+        </Modal>
+      )}
       {searchOpen && (
         <WorkspaceSearch
           meetings={meetings}

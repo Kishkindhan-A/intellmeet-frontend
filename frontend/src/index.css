@@ -428,3 +428,44 @@ dialog::backdrop {
   line-height: 1.7;
   margin-bottom: 24px;
 }
+
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.shortcut-row kbd {
+  border: 1px solid #a8b69c;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.shortcut-list {
+  margin-top: 24px;
+}
+.prefer-compact .app-shell .panel {
+  padding: 16px;
+}
+.prefer-compact .app-shell .settings-grid {
+  gap: 16px;
+}
+.prefer-reduced-motion *,
+.prefer-reduced-motion *::before,
+.prefer-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
