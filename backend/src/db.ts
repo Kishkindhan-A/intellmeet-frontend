@@ -367,6 +367,10 @@ export async function ensureIndexes() {
     { securityVersion: { $exists: false } },
     { $set: { securityVersion: 0 } },
   );
-  for (const model of models) await model.createIndexes();
+  // Collections are independent. Avoid serial network round-trips on every cold start,
+  // while still awaiting every index before accepting authentication or writes.
+  const indexes = await Promise.allSettled(models.map((model) => model.createIndexes()));
+  const failed = indexes.find((result) => result.status === 'rejected');
+  if (failed?.status === 'rejected') throw failed.reason;
 }
 export { mongoose };
