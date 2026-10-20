@@ -1,12 +1,10 @@
 # IntellMeet authentication integration
 
-Updated 19 October 2026.
+Updated 20 October 2026.
 
-Current local-project preference: `REQUIRE_EMAIL_VERIFICATION=false`. Signup creates an account and the frontend immediately signs in with its email/password. Existing pending accounts can also sign in without OTP. No verification email is sent or verification claim added to account records. `GET /api/auth/config` supplies this policy to the frontend. Passwords, MFA when enrolled, session/CSRF checks and quotas remain enforced. The local runner sets this preference; production configuration requires the flag to be true. The verification workflows below remain available when enabled.
+Production and default configuration require email verification (`REQUIRE_EMAIL_VERIFICATION=true`). Signup automatically sends a six-digit OTP and a one-time fallback link. Unverified password sign-in is blocked; the frontend directs the account to the verification page. Accepted verification enables password sign-in. The development services runner may explicitly disable verification for local testing.
 
-This mode passed 96 automated tests and six live local checks, including registration, password login without OTP, incorrect-password denial, protected access and logout invalidation. Both builds pass. The earlier testing cooldown expired before the final live check.
-
-The subsequent [automatic email verification update](EMAIL_VERIFICATION.md) adds branded HTML mail, automatic link checking, coordinated resend replacement and uniform recipient-specific SMTP. Its final suite passes 89 tests; the 80-test/12-check figures below describe the preceding authentication integration.
+See [live sender verification results](LIVE_EMAIL_OTP.md) for the deployed receipt/sign-in test and its OTP-entry limitation. The current suite passes 102 tests. Historical counts elsewhere in this document describe earlier versions.
 
 ## Architecture and scope
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Sparkles, ShieldCheck, Check, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { api, clearSession, login, setSession } from './api';
+import { api, ApiError, clearSession, login, setSession } from './api';
 import type { User } from './api';
 import { ErrorBox, Submit } from './ui';
 import { SignalMark } from './Brand';
@@ -184,6 +184,12 @@ export function Auth({ ready }: { ready: (u: User) => void }) {
         ready(s.user);
       }
     } catch (e) {
+      if (mode === 'login' && e instanceof ApiError && e.code === 'EMAIL_UNVERIFIED') {
+        setPassword('');
+        history.pushState({ verificationEmail: email }, '', '/verify-email');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        return;
+      }
       setError(e instanceof Error ? e.message : 'Unable to continue');
     } finally {
       setBusy(false);
@@ -283,7 +289,7 @@ export function Auth({ ready }: { ready: (u: User) => void }) {
                   : mode === 'verify'
                     ? token
                       ? 'Checking your email link. You can retry if needed.'
-                      : 'Enter the six-digit OTP sent to your email. It expires in 10 minutes.'
+                      : 'Enter the six-digit OTP from your email. Codes expire in 10 minutes. Need a new code? Use Resend verification email below.'
                     : 'Pick up the conversation where you left off.'}
           </p>
           <ErrorBox message={error} />

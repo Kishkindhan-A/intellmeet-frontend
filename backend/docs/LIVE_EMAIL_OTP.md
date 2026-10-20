@@ -1,14 +1,16 @@
 # Live project sender and email OTP
 
-## Current status
+## Current status (20 October 2026)
 
-The latest user preference is email/password login without verification. The local runtime now sets `REQUIRE_EMAIL_VERIFICATION=false`, so neither a real sender nor OTP is needed for signup/login. The sender/OTP instructions below describe the optional verification mode and remain available for future use.
+Production uses `REQUIRE_EMAIL_VERIFICATION=true` with the real sender `meetintell@gmail.com`. The default and production environment preparation template also require verification. The local services runner can explicitly use test-email mode; captured local mail is not proof of external delivery.
 
-The user has chosen local test email for this project. Run `npm run local:services` to capture OTP messages in Mailpit at `http://localhost:8026/`; no real Gmail account is needed for this mode. The live-sender instructions below remain available for a future switch.
+A controlled signup on the Vercel deployment delivered a verification message to an alias of the connected owner inbox. Gmail placed it in Spam, although the received message showed SPF, DKIM and DMARC passing. SMTP acceptance and inbox placement are distinct; inbox placement is not guaranteed by this test.
 
-The code supports real SMTP delivery and six-digit email OTP verification. A project Gmail signup was started with the display name **IntellMeet Team**, but Google requires the account owner's birthday/gender, password, possible phone verification and terms acceptance. No Gmail address has been created or confirmed yet, and no live sender credentials are configured. Do not describe the captured development inbox as live external email.
+The deployed browser rejected sign-in before confirmation, accepted the delivered single-use verification link, rejected link reuse, and allowed sign-in afterward. The Gmail connector withholds OTP text, so this live check used the provided verification link. Six-digit OTP ownership, expiry, attempt limits, resend replacement and replay rejection are covered by automated tests, not claimed as a live OTP-entry test.
 
-The signup tab is left for the owner to finish. Do not invent account-owner information or send passwords/Google verification codes in chat.
+The suite passes 102 tests, including allowlisted SMTP diagnostic categories. Diagnostic logs never include provider messages, passwords, OTPs or recipient addresses. The SMTP secret stays in Vercel.
+
+Existing unverified users must confirm their email before signing in. Login routes them to the verification page, where they can request a fresh code. No account was marked verified directly in MongoDB.
 
 ## After the Gmail account is created
 
