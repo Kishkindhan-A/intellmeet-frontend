@@ -89,6 +89,12 @@ export function MeetingRoom({
       if (!dirtyRef.current) {
         setNote(b.value.note);
         setDraft(b.value.note.text);
+        setInfo((current) =>
+          current ===
+          'Shared notes have unsaved edits. A version conflict will preserve your draft.'
+            ? ''
+            : current,
+        );
       } else {
         setInfo('Shared notes have unsaved edits. A version conflict will preserve your draft.');
       }
