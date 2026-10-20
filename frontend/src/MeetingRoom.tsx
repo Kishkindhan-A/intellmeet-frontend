@@ -48,6 +48,7 @@ export function MeetingRoom({
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [note, setNote] = useState({ text: '', revision: 0 });
+  const [noteLoaded, setNoteLoaded] = useState(false);
   const [draft, setDraft] = useState('');
   const [dirty, setDirty] = useState(false);
   const dirtyRef = useRef(false);
@@ -86,6 +87,7 @@ export function MeetingRoom({
     if (a.status === 'fulfilled')
       setMessages(a.value.messages.filter((m) => !m.deletedAt).reverse());
     if (b.status === 'fulfilled') {
+      setNoteLoaded(true);
       if (!dirtyRef.current) {
         setNote(b.value.note);
         setDraft(b.value.note.text);
@@ -436,7 +438,11 @@ export function MeetingRoom({
             {tab === 'notes' && (
               <>
                 <h2>Shared notes</h2>
-                <p className="muted">Capture ideas together. Revision {note.revision}.</p>
+                <p className="muted" role="status">
+                  {noteLoaded
+                    ? `Capture ideas together. Revision ${note.revision}.`
+                    : 'Loading shared notes�'}
+                </p>
                 <textarea
                   className="notes-editor"
                   aria-label="Shared notes"
@@ -447,12 +453,12 @@ export function MeetingRoom({
                     dirtyRef.current = true;
                   }}
                   maxLength={50000}
-                  disabled={meeting.status === 'live' && !admitted}
+                  disabled={!noteLoaded || busy || (meeting.status === 'live' && !admitted)}
                   placeholder="The ideas worth keeping…"
                 />
                 <button
                   className="primary"
-                  disabled={!dirty || busy}
+                  disabled={!noteLoaded || !dirty || busy}
                   onClick={() =>
                     void action(async () => {
                       await api(`/meetings/${meeting._id}/notes`, 'PUT', {
@@ -478,6 +484,8 @@ export function MeetingRoom({
                         setDraft(r.note.text);
                         setDirty(false);
                         dirtyRef.current = false;
+                        setNoteLoaded(true);
+                        setError('');
                         setInfo('Latest shared notes loaded.');
                       } catch (e) {
                         setError(e instanceof Error ? e.message : 'Unable to reload notes');

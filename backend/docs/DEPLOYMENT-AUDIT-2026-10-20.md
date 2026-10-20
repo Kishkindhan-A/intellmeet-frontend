@@ -24,6 +24,8 @@ Audit work used isolated accounts, workspaces, meetings, messages, tasks and not
 5. The shared-note unsaved warning persisted after a successful save. It now clears when the persisted revision is loaded.
 6. Cold starts performed collection index setup serially. Independent collections now initialize concurrently; all index results are awaited and any failure still prevents startup.
 
+7. Notes could be edited before their first persisted revision arrived, causing a first-save conflict. Editing now waits for that revision, and the editor is disabled while a save is in flight.
+
 ## Automated validation
 
 101 backend, frontend API-client and security regression tests passed. Backend type checking/build and frontend production build passed. Frontend lint has no errors, with five existing warnings. Production dependency audits reported zero known vulnerabilities for both packages. Secret scanning passed. The lazy meeting bundle still exceeds Vite's 500 kB advisory threshold.
